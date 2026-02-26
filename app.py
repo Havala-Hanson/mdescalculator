@@ -25,18 +25,6 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# TODO: Add a natural-language study description chat box.
-# Requirements:
-# - A text input where users describe their study in plain language.
-# - A lightweight classifier that returns:
-#     1) one recommended design when confidence >= 0.7
-#     2) top 3 likely designs when confidence < 0.7
-#     3) a "something else — add more detail" option
-# - Use descriptive design names (e.g., "Two-level cluster randomized assignment, treatment at the cluster level").
-# - Show the technical name (e.g., CRA2_2) as a small secondary label.
-# - After classification, route the user to the correct design page.
-# - Keep the UI simple and Streamlit-native.
-
 # ── Design catalogue ──────────────────────────────────────────────────────────
 
 class DesignInfo(NamedTuple):
@@ -51,7 +39,7 @@ class DesignInfo(NamedTuple):
 DESIGNS: list[DesignInfo] = [
     DesignInfo(
         code="CRA2_2",
-        title="Classrooms (or schools) randomized",
+        title="Two-level cluster randomized assignment, treatment at the cluster level",
         description=(
             "Whole classrooms or schools are randomly assigned to treatment "
             "or control.  Students are nested within clusters."
@@ -62,7 +50,7 @@ DESIGNS: list[DesignInfo] = [
     ),
     DesignInfo(
         code="BCRA2_2",
-        title="Classrooms randomized within sites",
+        title="Two-level blocked cluster randomized assignment, treatment at the cluster level",
         description=(
             "Classrooms are randomly assigned within predefined blocks "
             "(e.g., grade levels, geographic regions, or cohorts)."
@@ -73,7 +61,7 @@ DESIGNS: list[DesignInfo] = [
     ),
     DesignInfo(
         code="CRA3_3",
-        title="Districts (or large organizations) randomized",
+        title="Three-level cluster randomized assignment, treatment at the district level",
         description=(
             "Top-level organizations (districts, hospitals, counties) are "
             "randomly assigned.  Schools and students are nested below."
@@ -84,7 +72,7 @@ DESIGNS: list[DesignInfo] = [
     ),
     DesignInfo(
         code="BCRA3_2",
-        title="Schools randomized within districts",
+        title="Three-level blocked cluster randomized assignment, treatment at the school level",
         description=(
             "Schools are randomly assigned to treatment within districts. "
             "Districts serve as blocks; students are nested within schools."
@@ -206,9 +194,27 @@ def design_card(design: DesignInfo, key_prefix: str) -> bool:
         )
 
 
+# Threshold for "high confidence" single-design recommendation.
+# The keyword-scoring formula has a mathematical maximum of ~66.7% (when
+# only one category of keyword patterns fires and none from other categories),
+# so a threshold above that value would never be reached.
+_HIGH_CONFIDENCE_THRESHOLD = 0.6
+
+# Help text shown when the user clicks "Something else — add more detail"
+_CLASSIFIER_HELP_TEXT = (
+    "💡 **Tips for a better match:** Try including details such as:\n"
+    "- How many levels of nesting your study has "
+    "(e.g., *students nested within schools nested within districts*)\n"
+    "- What unit is randomly assigned "
+    "(e.g., *schools are randomly assigned to treatment*)\n"
+    "- Whether randomization occurs within pre-existing groupings or blocks\n\n"
+    "Edit your description above and the classifier will update automatically."
+)
+
+
 def confidence_badge(confidence: float) -> str:
     """Format a confidence value as a colour-coded badge string."""
-    if confidence >= 0.7:
+    if confidence >= _HIGH_CONFIDENCE_THRESHOLD:
         return f"🟢 High confidence ({confidence:.0%})"
     elif confidence >= 0.4:
         return f"🟡 Moderate confidence ({confidence:.0%})"
@@ -336,7 +342,7 @@ if nl_input and len(nl_input.strip()) > 10:
     result = classify_study(nl_input)
     st.markdown(f"**Classification result:** {confidence_badge(result.confidence)}")
 
-    if result.confidence >= 0.7:
+    if result.confidence >= _HIGH_CONFIDENCE_THRESHOLD:
         matched_design = next(
             (d for d in DESIGNS if d.code == result.design), None
         )
@@ -376,11 +382,17 @@ if nl_input and len(nl_input.strip()) > 10:
                                 "BCRA3_2": "pages/2_Three_Level_CRT",
                             }
                             st.switch_page(page_map[code])
-        with top_cols[-1] if len(result.top_designs) < 3 else st.container():
-            st.info(
-                "None of these match?  Use the guided questionnaire above or "
-                "select a design tile manually."
-            )
+
+        st.write("")
+        if st.button(
+            "Something else — add more detail",
+            key="nl_something_else",
+            type="secondary",
+        ):
+            st.session_state["nl_show_hint"] = True
+
+        if st.session_state.get("nl_show_hint"):
+            st.info(_CLASSIFIER_HELP_TEXT)
 
 st.divider()
 
