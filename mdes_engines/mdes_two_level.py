@@ -56,7 +56,7 @@ class MDESResult:
     """Container for MDES calculation outputs."""
 
     mdes: float
-    """Standardised minimum detectable effect size (Cohen's d)."""
+    """Standardized minimum detectable effect size (Cohen's d)."""
 
     se: float
     """Standard error of the effect-size estimator."""
@@ -275,7 +275,7 @@ def mdes_vs_clusters(
 ) -> dict[int, list[float]]:
     """Compute MDES over a range of cluster counts for multiple cluster sizes.
 
-    Useful for generating visualisations showing how MDES changes with
+    Useful for generating visualizations showing how MDES changes with
     sample size.
 
     Parameters
@@ -325,7 +325,7 @@ def _interpret_mdes(mdes: float) -> str:
     Parameters
     ----------
     mdes:
-        Standardised effect size.
+        Standardized effect size.
 
     Returns
     -------
