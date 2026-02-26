@@ -85,23 +85,70 @@ DESIGNS: list[DesignInfo] = [
 
 # Keywords for the rules-based classifier
 _KEYWORDS_L3_RANDOMIZED = [
-    r"\bdistrict\b", r"\bhospital\b", r"\bcounty\b", r"\borganizat",
-    r"\bsystem\b", r"\blevel.?3\b", r"\bthree.level\b",
-    r"randomized? (district|hospital|county|organization)",
+    r"\bdistricts?\b", r"\bhospitals?\b", r"\bcounty\b", r"\bcounties\b",
+    r"\borganizat", r"\bsystems?\b", r"\blevel.?3\b", r"\bthree.level\b",
+    r"\bclinics?\b", r"\bcenters?\b",
 ]
 _KEYWORDS_L2_RANDOMIZED = [
-    r"\bschool\b", r"\bclassroom\b", r"\bteacher\b", r"\bclinic\b",
-    r"\bsite\b", r"\bcluster\b", r"\blevel.?2\b", r"\btwo.level\b",
-    r"randomized? (school|classroom|teacher|clinic|site|cluster)",
+    r"\bschools?\b", r"\bclassrooms?\b", r"\bteachers?\b",
+    r"\bsites?\b", r"\bclusters?\b", r"\blevel.?2\b", r"\btwo.level\b",
+    r"\bsections?\b", r"\bgroups?\b", r"\btherapists?\b", r"\bproviders?\b",
+    r"\bclinicians?\b", r"\bcaseworkers?\b", r"\binstructors?\b",
 ]
 _KEYWORDS_BLOCKED = [
-    r"\bblock\b", r"\bstrat", r"\bwithin.site\b", r"\bwithin.school\b",
-    r"\bwithin.district\b", r"\bcohort\b", r"\bpaired\b",
+    r"\bblocks?\b", r"\bstrat", r"\bcohorts?\b", r"\bpaired\b",
+    r"\bblocked by\b", r"\bstratified by\b", r"\bmatched on\b",
+    r"\bwithin-sites?\b", r"\bwithin-schools?\b", r"\bwithin-districts?\b",
+    r"\bwithin-teachers?\b", r"\bwithin-clinics?\b",
+    r"(?:assign\w+|randomiz\w+)\s+(?:\w+\s+)?within",
 ]
 _KEYWORDS_INDIVIDUAL = [
-    r"\bindividual\b", r"\bparticipant\b", r"\bpatient\b",
-    r"\bperson.level\b", r"randomized? individual",
+    r"\bindividuals?\b", r"\bparticipants?\b", r"\bpatients?\b",
+    r"\bperson.level\b", r"\bclients?\b", r"\bchild(?:ren)?\b",
+    r"\badults?\b", r"\byouths?\b",
+    r"random(?:ly assign\w*|iz\w+) (?:individual|participant|patient|client|child|adult)\w*",
 ]
+
+# Patterns for randomization verb detection (confidence rubric)
+_PATTERNS_RAND_VERB = [
+    r"\brandomly assign", r"\brandomiz", r"\brandomis",
+]
+_PATTERNS_RAND_IMPLIED = [
+    r"\ballocated? to\b", r"\bassigned? to\b", r"\btreatment assigned\b",
+]
+
+# Patterns for explicit assignment-unit detection (confidence rubric and
+# design scoring tie-breaking). Covers active voice ("randomly assigning
+# schools") and passive voice ("schools are randomly assigned").
+_PATTERNS_EXPLICIT_L3 = [
+    r"random(?:ly assign\w*|iz\w+) (?:district|hospital|county|organization|clinic|center)\w*",
+    r"\b(?:districts?|hospitals?|county|counties|clinics?|centers?)\b.{0,20}random(?:ly assign\w*|iz\w+)",
+]
+_PATTERNS_EXPLICIT_L2 = [
+    r"random(?:ly assign\w*|iz\w+) (?:school|classroom|teacher|site|cluster|section|group|therapist|provider|clinician)\w*",
+    r"\b(?:schools?|classrooms?|teachers?|sites?|clusters?|sections?|groups?|therapists?|providers?|clinicians?)\b.{0,20}random(?:ly assign\w*|iz\w+)",
+]
+_PATTERNS_EXPLICIT_IND = [
+    r"random(?:ly assign\w*|iz\w+) (?:individual|participant|patient|client|child|adult)\w*",
+    r"\b(?:individuals?|participants?|patients?|clients?|children?|adults?)\b.{0,20}random(?:ly assign\w*|iz\w+)",
+]
+
+# Patterns for nesting structure detection (confidence rubric)
+_PATTERNS_NESTING_EXPLICIT = [
+    r"\bnested (?:within|in)\b",
+]
+_PATTERNS_NESTING_PARTIAL = [
+    r"\bwithin\b", r"\bgrouped (?:by|within)\b", r"\bclustered (?:in|within)\b",
+]
+
+# Confidence rubric weights (additive, capped at 1.0)
+_CONF_SINGLE_UNIT = 0.5      # single clearly identified assignment unit
+_CONF_MULTI_UNIT = 0.2       # multiple possible units, or unit implied by keywords
+_CONF_NESTING_EXPLICIT = 0.3 # explicit nesting phrase ("nested within")
+_CONF_NESTING_PARTIAL = 0.15 # partial nesting signal ("within")
+_CONF_BLOCKING = 0.1         # blocking keywords detected
+_CONF_RAND_VERB = 0.2        # explicit randomization verb
+_CONF_RAND_IMPLIED = 0.1     # implied assignment language
 
 
 # ── Classifier ────────────────────────────────────────────────────────────────
@@ -110,6 +157,32 @@ class ClassifierResult(NamedTuple):
     design: str
     confidence: float
     top_designs: list[tuple[str, float]]
+    rationale: str = ""
+
+
+def _build_rationale(
+    design: str,
+    *,
+    explicit_l3: bool,
+    explicit_l2: bool,
+    has_blocking: bool,
+    has_nesting: bool,
+) -> str:
+    """Return a one-sentence rationale for the recommended design."""
+    reasons: dict[str, str] = {
+        "CRA3_3": "district- or organization-level randomization was detected",
+        "BCRA3_2": (
+            "school-level randomization within districts (blocking) was detected"
+            if has_blocking
+            else "school-level randomization with a higher-level grouping structure was detected"
+        ),
+        "CRA2_2": "classroom- or site-level randomization without blocking was detected",
+        "BCRA2_2": "classroom-level randomization within pre-existing blocks was detected",
+    }
+    base = reasons.get(design, "the description matched this design most closely")
+    if has_nesting:
+        base += ", with an explicit nesting structure"
+    return f"Suggested because {base}."
 
 
 def classify_study(description: str) -> ClassifierResult:
@@ -119,6 +192,10 @@ def classify_study(description: str) -> ClassifierResult:
     against keyword patterns.  It returns a confidence score in [0, 1] and
     recommends one or more designs.
 
+    Confidence is computed via an additive rubric (see module-level pattern
+    constants) based on: explicit assignment-unit detection, nesting structure,
+    blocking keywords, and presence of a randomization verb.
+
     Parameters
     ----------
     description:
@@ -127,13 +204,16 @@ def classify_study(description: str) -> ClassifierResult:
     Returns
     -------
     ClassifierResult
-        Best-match design code, its confidence score, and the top-3 designs
-        with scores.
+        Best-match design code, its confidence score, the top-3 designs
+        with scores, and a one-sentence rationale.
     """
     text = description.lower()
 
     def count_hits(patterns: list[str]) -> int:
         return sum(1 for pat in patterns if re.search(pat, text))
+
+    def has_match(patterns: list[str]) -> bool:
+        return any(re.search(pat, text) for pat in patterns)
 
     hits_l3 = count_hits(_KEYWORDS_L3_RANDOMIZED)
     hits_l2 = count_hits(_KEYWORDS_L2_RANDOMIZED)
@@ -149,30 +229,99 @@ def classify_study(description: str) -> ClassifierResult:
         "BCRA2_2": (hits_l2 + hits_blocked) / (2 * total),
     }
 
-    # Penalise individual-randomization designs (not CRT)
+    # Penalise cluster designs when individual-randomization language dominates
     if hits_individual > hits_l2 and hits_individual > hits_l3:
         for key in scores:
             scores[key] *= 0.3
 
-    # Boost blocked designs when blocking keywords found
+    # Boost blocked designs when blocking keywords are found
     if hits_blocked > 0:
         scores["BCRA3_2"] *= 1.5
         scores["BCRA2_2"] *= 1.5
+
+    # Extra boost for BCRA3_2 when both L2 and L3 keywords appear alongside
+    # blocking – this is the classic "schools within districts" pattern.
+    if hits_l3 > 0 and hits_l2 > 0 and hits_blocked > 0:
+        scores["BCRA3_2"] *= 2.0
+
+    # ── Explicit assignment-unit boosts ──────────────────────────────────────
+    # Detect explicit assignment patterns (active and passive voice).
+    # These are also used later by the confidence rubric.
+    explicit_l3 = has_match(_PATTERNS_EXPLICIT_L3)
+    explicit_l2 = has_match(_PATTERNS_EXPLICIT_L2)
+    explicit_ind = has_match(_PATTERNS_EXPLICIT_IND)
+
+    # Boost the design that best matches the explicitly stated assignment unit.
+    if explicit_l3 and hits_blocked == 0:
+        scores["CRA3_3"] *= 2.0       # districts/hospitals assigned, no blocking
+    if explicit_l2:
+        if hits_blocked > 0 and hits_l3 == 0:
+            scores["BCRA2_2"] *= 2.0  # clusters assigned within non-district blocks
+        elif hits_blocked == 0 and hits_l3 == 0:
+            scores["CRA2_2"] *= 2.0   # pure two-level cluster design
 
     # Normalise
     total_score = sum(scores.values()) or 1.0
     scores = {k: v / total_score for k, v in scores.items()}
 
     sorted_designs = sorted(scores.items(), key=lambda x: x[1], reverse=True)
-    best_design, best_conf = sorted_designs[0]
+    best_design, _ = sorted_designs[0]
 
-    # Clamp confidence to [0.1, 0.95]
-    confidence = max(0.1, min(0.95, best_conf))
+    # ── Rubric-based confidence scoring ──────────────────────────────────────
+    # Start at 0.0 and accumulate up to 1.0 based on signal strength.
+
+    confidence = 0.0
+
+    # 1. Assignment unit detection (max +_CONF_SINGLE_UNIT)
+    # explicit_l3, explicit_l2, explicit_ind computed during design scoring above.
+    num_explicit = int(explicit_l3) + int(explicit_l2) + int(explicit_ind)
+
+    if num_explicit == 1:
+        confidence += _CONF_SINGLE_UNIT    # single clear assignment unit
+    elif num_explicit > 1:
+        confidence += _CONF_MULTI_UNIT     # multiple possible units
+    elif hits_l3 > 0 or hits_l2 > 0:
+        confidence += _CONF_MULTI_UNIT     # assignment unit implied by keywords
+
+    # 2. Nesting structure detection (max +_CONF_NESTING_EXPLICIT)
+    if has_match(_PATTERNS_NESTING_EXPLICIT):
+        confidence += _CONF_NESTING_EXPLICIT   # explicit "nested within" phrasing
+    elif has_match(_PATTERNS_NESTING_PARTIAL):
+        confidence += _CONF_NESTING_PARTIAL    # partial nesting signal (e.g., "within")
+
+    # 3. Blocking detection (max +_CONF_BLOCKING)
+    if hits_blocked > 0:
+        confidence += _CONF_BLOCKING
+
+    # 4. Randomization verb detection (max +_CONF_RAND_VERB)
+    if has_match(_PATTERNS_RAND_VERB):
+        confidence += _CONF_RAND_VERB          # explicit randomization verb
+    elif has_match(_PATTERNS_RAND_IMPLIED):
+        confidence += _CONF_RAND_IMPLIED       # implied assignment language
+
+    # 5. Reduce confidence when individual-randomization language dominates
+    if hits_individual > hits_l2 and hits_individual > hits_l3:
+        confidence *= 0.3
+
+    # Cap at 1.0
+    confidence = min(1.0, confidence)
+
+    rationale = _build_rationale(
+        best_design,
+        explicit_l3=explicit_l3,
+        explicit_l2=explicit_l2,
+        has_blocking=hits_blocked > 0,
+        has_nesting=(
+            has_match(_PATTERNS_NESTING_EXPLICIT)
+            or has_match(_PATTERNS_NESTING_PARTIAL)
+        ),
+    )
 
     return ClassifierResult(
         design=best_design,
         confidence=confidence,
         top_designs=sorted_designs[:3],
+        rationale=rationale,
     )
 
 
@@ -195,10 +344,9 @@ def design_card(design: DesignInfo, key_prefix: str) -> bool:
 
 
 # Threshold for "high confidence" single-design recommendation.
-# The keyword-scoring formula has a mathematical maximum of ~66.7% (when
-# only one category of keyword patterns fires and none from other categories),
-# so a threshold above that value would never be reached.
-_HIGH_CONFIDENCE_THRESHOLD = 0.6
+# With the rubric-based scoring (max 1.0), a score >= 0.7 indicates that at
+# least a clear assignment unit and nesting or blocking signal were detected.
+_HIGH_CONFIDENCE_THRESHOLD = 0.7
 
 # Help text shown when the user clicks "Something else — add more detail"
 _CLASSIFIER_HELP_TEXT = (
@@ -351,6 +499,8 @@ if nl_input and len(nl_input.strip()) > 10:
                 f"Recommended design: **{matched_design.title}** "
                 f"(`{result.design}`)"
             )
+            if result.rationale:
+                st.caption(result.rationale)
             if st.button("Open recommended calculator", key="nl_open"):
                 st.session_state["selected_design"] = result.design
                 page_map = {
