@@ -107,7 +107,7 @@ _KEYWORDS_INDIVIDUAL = [
 # ── Classifier ────────────────────────────────────────────────────────────────
 
 """
-Classifier requirements for natural-language study descriptions.
+TODO: Classifier requirements for natural-language study descriptions.
 
 The classifier must reliably detect:
 1. UNIT OF RANDOMIZATION (assignment)
