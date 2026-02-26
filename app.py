@@ -106,6 +106,168 @@ _KEYWORDS_INDIVIDUAL = [
 
 # ── Classifier ────────────────────────────────────────────────────────────────
 
+"""
+Classifier requirements for natural-language study descriptions.
+
+The classifier must reliably detect:
+1. UNIT OF RANDOMIZATION (assignment)
+   - Keywords for individuals: student, participant, patient, client, child, adult
+   - Keywords for level-2 clusters: classroom, section, group, therapist, provider
+   - Keywords for level-3 clusters: teacher, clinician, caseworker
+   - Keywords for level-4 clusters: school, clinic, hospital, site, district
+   - Keywords for blocking: within, stratified by, blocked by, matched on
+
+2. NESTING STRUCTURE (levels)
+   - Detect phrases like “students nested within classrooms”, “patients nested within clinics”
+   - If both a lower-level and higher-level unit appear, infer levels:
+       individuals → clusters → sites
+   - If only individuals + clusters appear, infer 2-level structure.
+
+3. ASSIGNMENT LOGIC
+   - If the text says “randomly assigning X”, X is the unit of assignment.
+   - If the text says “randomizing within Y”, Y is the blocking variable.
+   - If the text says “randomizing individuals within sites”, classify as multi-site RCT.
+
+4. DESIGN MAPPING RULES
+   - If assignment unit is individuals → Individual Randomized Trial (IRT)
+   - If assignment unit is a level-2 cluster → Two-level cluster randomized assignment (treatment at cluster level)
+   - If assignment unit is a level-3 cluster → Three-level cluster randomized assignment (treatment at level 3)
+   - If assignment unit is a level-2 cluster AND blocking is detected → Blocked cluster randomized assignment
+   - If assignment unit is individuals AND sites are mentioned → Multi-site randomized assignment (individuals randomized within sites)
+   - If assignment unit is clusters AND sites are mentioned → Multi-site cluster randomized assignment
+
+5. CONFIDENCE SCORING
+   - Confidence increases when:
+       - assignment unit is explicitly named (“we are randomly assigning schools”)
+       - nesting structure is explicit (“students nested within schools”)
+       - blocking is explicit (“within teachers”, “within clinics”)
+   - Confidence decreases when:
+       - multiple possible assignment units appear
+       - nesting structure is ambiguous
+       - no randomization verb is detected
+
+   - If top confidence >= 0.7 → return ONE recommended design.
+   - If top confidence < 0.7 → return TOP THREE designs + “something else” option.
+
+6. OUTPUT FORMAT
+   For each design returned:
+   - descriptive_name: plain-language label (primary)
+   - technical_name: PowerUpR-style label (secondary)
+   - rationale: one sentence explaining why it was suggested
+
+7. EXAMPLE CLASSIFICATION
+   Input:
+       “We are randomly assigning schools within districts to receive a new math curriculum.
+        Students are nested within schools.”
+   Expected:
+       descriptive_name: “Three-level cluster randomized assignment, treatment at the school level”
+       technical_name: “CRA3_3”
+       rationale: “You described randomizing schools, with students nested within schools and districts above them.”
+       confidence: high (>= 0.7)
+
+8. Leverage a keyword dictionary for units, nesting, blocking, and randomization verbs. The dictionary gives the classifier a vocabulary for detecting the unit of assignment, nesting structure, presence of blocking, whether the design is multi-site, and whether the text even describes randomization.  
+KEYWORDS = {
+    "individual": [
+        "student", "students", "participant", "participants", "patient", "patients",
+        "client", "clients", "child", "children", "adult", "adults", "youth"
+    ],
+    "cluster_level_2": [
+        "classroom", "classrooms", "section", "sections", "group", "groups",
+        "cohort", "cohorts", "therapist", "therapists", "provider", "providers"
+    ],
+    "cluster_level_3": [
+        "teacher", "teachers", "clinician", "clinicians", "caseworker", "caseworkers",
+        "instructor", "instructors"
+    ],
+    "cluster_level_4": [
+        "school", "schools", "clinic", "clinics", "hospital", "hospitals",
+        "site", "sites", "district", "districts", "center", "centers"
+    ],
+    "nesting": [
+        "nested within", "within", "inside", "under", "grouped by", "clustered in"
+    ],
+    "blocking": [
+        "within", "blocked by", "stratified by", "matched on", "paired with"
+    ],
+    "randomization": [
+        "randomly assigning", "randomly assigned", "randomizing", "randomised",
+        "assigned to", "allocated to", "treatment assigned at"
+    ],
+    "multi_site": [
+        "within sites", "across sites", "multi-site", "multi site", "across clinics",
+        "across schools", "across districts"
+    ]
+}
+
+    9. Confidence scoring rubric for classification. This rubric gives explicit rules for how to assign confidence scores. It prevents the classifier from returning low-quality guesses and ensures that clear cases like school-level randomization get high confidence. 
+
+Confidence scoring rubric:
+
+Start with a base confidence of 0.0 and add points based on detected features.
+
+1. Assignment unit detection (max +0.5)
+   - If a single assignment unit is clearly identified (e.g., "randomly assigning schools"): +0.5
+   - If multiple possible assignment units appear: +0.2
+   - If no assignment unit is detected: +0.0
+
+2. Nesting structure detection (max +0.3)
+   - If explicit nesting is detected (e.g., "students nested within schools"): +0.3
+   - If partial nesting is detected (e.g., "students in schools"): +0.15
+   - If no nesting structure is detected: +0.0
+
+3. Blocking detection (max +0.1)
+   - If blocking keywords appear (e.g., "within teachers", "blocked by school"): +0.1
+
+4. Multi-site detection (max +0.1)
+   - If multi-site keywords appear (e.g., "within sites", "across clinics"): +0.1
+
+5. Randomization verb detection (max +0.2)
+   - If a clear randomization verb appears (e.g., "randomly assigning"): +0.2
+   - If assignment is implied but not explicit: +0.1
+
+Total possible confidence: 1.2 (cap at 1.0)
+
+Threshold rule:
+- If top design confidence >= 0.7 → return ONE recommended design.
+- If top design confidence < 0.7 → return TOP THREE designs + “something else” option.
+
+10. Mapping rules for design classification
+These rules tell exactly how to map detected units and nesting to the correct design. THe mapping ensures that "schools within districts" -> three-level custer randomized assignment, treatment at school level; "classrooms within teachers" -> blocked cluster randomized assignment, "students within sites" -> multi-site individual randomized assignment, etc. 
+
+Design mapping rules:
+
+1. Individual randomized trial (IRT)
+   - Assignment unit: individual
+   - Nesting: optional
+   - Multi-site: optional
+
+2. Two-level cluster randomized assignment (treatment at cluster level)
+   - Assignment unit: level-2 cluster (classrooms, sections, groups)
+   - Nesting: individuals → clusters
+   - No blocking detected
+
+3. Blocked cluster randomized assignment
+   - Assignment unit: level-2 cluster
+   - Blocking detected (e.g., "within teachers")
+
+4. Three-level cluster randomized assignment (treatment at level 3)
+   - Assignment unit: level-3 cluster (teachers, clinicians)
+   - Nesting: individuals → level-2 → level-3
+
+5. Three-level cluster randomized assignment (treatment at level 4)
+   - Assignment unit: level-4 cluster (schools, clinics, districts)
+   - Nesting: individuals → level-2 → level-3 → level-4
+
+6. Multi-site individual randomized assignment (MRT)
+   - Assignment unit: individuals
+   - Multi-site keywords detected
+
+7. Multi-site cluster randomized assignment
+   - Assignment unit: clusters (level-2 or level-3)
+   - Multi-site keywords detected
+
+"""
+
 class ClassifierResult(NamedTuple):
     design: str
     confidence: float
