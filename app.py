@@ -25,6 +25,18 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
+# TODO: Add a natural-language study description chat box.
+# Requirements:
+# - A text input where users describe their study in plain language.
+# - A lightweight classifier that returns:
+#     1) one recommended design when confidence >= 0.7
+#     2) top 3 likely designs when confidence < 0.7
+#     3) a "something else — add more detail" option
+# - Use descriptive design names (e.g., "Two-level cluster randomized assignment, treatment at the cluster level").
+# - Show the technical name (e.g., CRA2_2) as a small secondary label.
+# - After classification, route the user to the correct design page.
+# - Keep the UI simple and Streamlit-native.
+
 # ── Design catalogue ──────────────────────────────────────────────────────────
 
 class DesignInfo(NamedTuple):
