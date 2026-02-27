@@ -38,6 +38,17 @@ class DesignInfo(NamedTuple):
 
 DESIGNS: list[DesignInfo] = [
     DesignInfo(
+        code="INDIV_RCT",
+        title="Individual-level randomized trial",
+        description=(
+            "Participants are individually randomized to treatment or control. "
+            "Supports unequal allocation and covariate adjustment."
+        ),
+        icon="🧍",
+        page="pages/4_Individual_RCT.py",
+        levels=1,
+    ),
+    DesignInfo(
         code="CRA2_2",
         title="Two-level cluster randomized assignment, treatment at the cluster level",
         description=(
@@ -171,6 +182,7 @@ def _build_rationale(
     *,
     explicit_l3: bool,
     explicit_l2: bool,
+    explicit_ind: bool,
     has_blocking: bool,
     has_nesting: bool,
 ) -> str:
@@ -184,9 +196,12 @@ def _build_rationale(
         ),
         "CRA2_2": "classroom- or site-level randomization without blocking was detected",
         "BCRA2_2": "classroom-level randomization within pre-existing blocks was detected",
+        "INDIV_RCT": "individual-level randomization without clustering was detected",
     }
     base = reasons.get(design, "the description matched this design most closely")
-    if has_nesting:
+    if design == "INDIV_RCT" and explicit_ind:
+        base += ", with explicit individual randomization language"
+    if has_nesting and design != "INDIV_RCT":
         base += ", with an explicit nesting structure"
     return f"Suggested because {base}."
 
@@ -233,12 +248,15 @@ def classify_study(description: str) -> ClassifierResult:
         "BCRA3_2": (hits_l3 + hits_blocked) / (2 * total),
         "CRA2_2": hits_l2 / total,
         "BCRA2_2": (hits_l2 + hits_blocked) / (2 * total),
+        "INDIV_RCT": hits_individual / total,
     }
 
     # Penalise cluster designs when individual-randomization language dominates
     if hits_individual > hits_l2 and hits_individual > hits_l3:
         for key in scores:
-            scores[key] *= 0.3
+            if key != "INDIV_RCT":
+                scores[key] *= 0.3
+        scores["INDIV_RCT"] *= 2.0
 
     # Boost blocked designs when blocking keywords are found
     if hits_blocked > 0:
@@ -265,6 +283,8 @@ def classify_study(description: str) -> ClassifierResult:
             scores["BCRA2_2"] *= 2.0  # clusters assigned within non-district blocks
         elif hits_blocked == 0 and hits_l3 == 0:
             scores["CRA2_2"] *= 2.0   # pure two-level cluster design
+    if explicit_ind:
+        scores["INDIV_RCT"] *= 2.5
 
     # Normalise
     total_score = sum(scores.values()) or 1.0
@@ -305,8 +325,8 @@ def classify_study(description: str) -> ClassifierResult:
     elif has_match(_PATTERNS_RAND_IMPLIED):
         confidence += _CONF_RAND_IMPLIED       # implied assignment language
 
-    # 5. Reduce confidence when individual-randomization language dominates
-    if hits_individual > hits_l2 and hits_individual > hits_l3:
+    # 5. Reduce confidence for cluster designs when individual language dominates
+    if hits_individual > hits_l2 and hits_individual > hits_l3 and best_design != "INDIV_RCT":
         confidence *= 0.3
 
     # Cap at 1.0
@@ -316,6 +336,7 @@ def classify_study(description: str) -> ClassifierResult:
         best_design,
         explicit_l3=explicit_l3,
         explicit_l2=explicit_l2,
+        explicit_ind=explicit_ind,
         has_blocking=hits_blocked > 0,
         has_nesting=(
             has_match(_PATTERNS_NESTING_EXPLICIT)
@@ -434,11 +455,12 @@ with st.expander("🧭 Not sure which design fits? Take the guided questionnaire
     if q1 and q2:
         is_blocked = q2.startswith("Yes")
         if "Individuals" in q1:
-            st.info(
-                "ℹ️ Individual-level randomization is not a cluster design.  "
-                "This tool focuses on cluster randomized trials.  You may want "
-                "a standard power calculator for individually randomized studies."
-            )
+            rec = "INDIV_RCT"
+            d = _DESIGN_BY_CODE[rec]
+            st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
+            if st.button("Open this calculator", key="guided_open_indiv"):
+                st.session_state["selected_design"] = rec
+                st.switch_page(_PAGE_BY_CODE[rec])
         elif "Small groups" in q1 or "classrooms" in q1.lower():
             rec = "BCRA2_2" if is_blocked else "CRA2_2"
             d = _DESIGN_BY_CODE[rec]
