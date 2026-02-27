@@ -83,6 +83,12 @@ DESIGNS: list[DesignInfo] = [
     ),
 ]
 
+# Convenience lookup: design code → DesignInfo
+_DESIGN_BY_CODE: dict[str, DesignInfo] = {d.code: d for d in DESIGNS}
+
+# Convenience lookup: design code → page path
+_PAGE_BY_CODE: dict[str, str] = {d.code: d.page for d in DESIGNS}
+
 # Keywords for the rules-based classifier
 _KEYWORDS_L3_RANDOMIZED = [
     r"\bdistricts?\b", r"\bhospitals?\b", r"\bcounty\b", r"\bcounties\b",
@@ -396,15 +402,8 @@ for idx, design in enumerate(DESIGNS):
     with cols[idx % 2]:
         clicked = design_card(design, key_prefix="tile")
         if clicked:
-            page_map = {
-                "CRA2_2": "1_Two_Level_CRT",
-                "BCRA2_2": "3_Blocked_Design",
-                "CRA3_3": "2_Three_Level_CRT",
-                "BCRA3_2": "2_Three_Level_CRT",
-            }
-            target = page_map.get(design.code, "1_Two_Level_CRT")
             st.session_state["selected_design"] = design.code
-            st.switch_page(target)
+            st.switch_page(design.page)
 
 st.divider()
 
@@ -442,31 +441,25 @@ with st.expander("🧭 Not sure which design fits? Take the guided questionnaire
             )
         elif "Small groups" in q1 or "classrooms" in q1.lower():
             rec = "BCRA2_2" if is_blocked else "CRA2_2"
-            d = next(d for d in DESIGNS if d.code == rec)
+            d = _DESIGN_BY_CODE[rec]
             st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
             if st.button("Open this calculator", key="guided_open"):
                 st.session_state["selected_design"] = rec
-                if rec == "BCRA2_2":
-                    st.switch_page("3_Blocked_Design")
-                else:
-                    st.switch_page("1_Two_Level_CRT")
+                st.switch_page(_PAGE_BY_CODE[rec])
         elif "Schools" in q1 or "hospitals" in q1.lower():
             rec = "BCRA3_2" if is_blocked else "CRA2_2"
-            d = next(d for d in DESIGNS if d.code == rec)
+            d = _DESIGN_BY_CODE[rec]
             st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
             if st.button("Open this calculator", key="guided_open2"):
                 st.session_state["selected_design"] = rec
-                if rec == "BCRA3_2":
-                    st.switch_page("2_Three_Level_CRT")
-                else:
-                    st.switch_page("1_Two_Level_CRT")
+                st.switch_page(_PAGE_BY_CODE[rec])
         else:
             rec = "CRA3_3"
-            d = next(d for d in DESIGNS if d.code == rec)
+            d = _DESIGN_BY_CODE[rec]
             st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
             if st.button("Open this calculator", key="guided_open3"):
                 st.session_state["selected_design"] = rec
-                st.switch_page("2_Three_Level_CRT")
+                st.switch_page(_PAGE_BY_CODE[rec])
 
 st.divider()
 
@@ -491,9 +484,7 @@ if nl_input and len(nl_input.strip()) > 10:
     st.markdown(f"**Classification result:** {confidence_badge(result.confidence)}")
 
     if result.confidence >= _HIGH_CONFIDENCE_THRESHOLD:
-        matched_design = next(
-            (d for d in DESIGNS if d.code == result.design), None
-        )
+        matched_design = _DESIGN_BY_CODE.get(result.design)
         if matched_design:
             st.success(
                 f"Recommended design: **{matched_design.title}** "
@@ -503,13 +494,7 @@ if nl_input and len(nl_input.strip()) > 10:
                 st.caption(result.rationale)
             if st.button("Open recommended calculator", key="nl_open"):
                 st.session_state["selected_design"] = result.design
-                page_map = {
-                    "CRA2_2": "1_Two_Level_CRT",
-                    "BCRA2_2": "3_Blocked_Design",
-                    "CRA3_3": "2_Three_Level_CRT",
-                    "BCRA3_2": "2_Three_Level_CRT",
-                }
-                st.switch_page(page_map[result.design])
+                st.switch_page(_PAGE_BY_CODE[result.design])
     else:
         st.warning(
             "The classifier is not confident about your design.  "
@@ -517,7 +502,7 @@ if nl_input and len(nl_input.strip()) > 10:
         )
         top_cols = st.columns(3)
         for col_idx, (code, score) in enumerate(result.top_designs):
-            matched = next((d for d in DESIGNS if d.code == code), None)
+            matched = _DESIGN_BY_CODE.get(code)
             if matched:
                 with top_cols[col_idx]:
                     with st.container(border=True):
@@ -525,13 +510,7 @@ if nl_input and len(nl_input.strip()) > 10:
                         st.caption(f"`{code}` — score {score:.0%}")
                         if st.button("Select", key=f"nl_select_{code}"):
                             st.session_state["selected_design"] = code
-                            page_map = {
-                                "CRA2_2": "1_Two_Level_CRT",
-                                "BCRA2_2": "3_Blocked_Design",
-                                "CRA3_3": "2_Three_Level_CRT",
-                                "BCRA3_2": "2_Three_Level_CRT",
-                            }
-                            st.switch_page(page_map[code])
+                            st.switch_page(_PAGE_BY_CODE[code])
 
         st.write("")
         if st.button(
