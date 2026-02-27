@@ -11,3 +11,4 @@ build/
 .streamlit/secrets.toml
 .DS_Store
 *.log
+agents/

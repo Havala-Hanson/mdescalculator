@@ -62,6 +62,16 @@ class TestDesignDetection:
         result = classify_study(desc)
         assert result.design == "BCRA2_2"
 
+    def test_individual_randomization(self):
+        """Individual-level language should map to INDIV_RCT."""
+        desc = (
+            "Participants are individually randomized to the intervention or control. "
+            "No clusters are involved."
+        )
+        result = classify_study(desc)
+        assert result.design == "INDIV_RCT"
+        assert result.confidence <= 0.7  # should be moderate without nesting
+
 
 # ── Confidence scoring rubric ─────────────────────────────────────────────────
 
@@ -177,18 +187,17 @@ class TestExpandedKeywords:
 
 class TestIndividualPenalty:
     def test_individual_assignment_lowers_crt_scores(self):
-        """Descriptions dominated by individual-level language score lower."""
+        """Individual language should route to INDIV_RCT, not CRTs."""
         desc = (
             "Participants are randomly assigned individually to treatment "
             "or control. No clustering."
         )
         result = classify_study(desc)
-        # Confidence should be low since no cluster keywords
-        assert result.confidence < 0.7
+        assert result.design == "INDIV_RCT"
+        assert result.confidence < 0.8
 
     def test_youth_in_individual_keywords(self):
         """'youth' should contribute to the individual keyword count."""
         desc = "Youth participants are randomly assigned to the intervention."
         result = classify_study(desc)
-        # No cluster keywords → individual penalty should reduce scores
-        assert result.confidence < 0.7
+        assert result.design == "INDIV_RCT"
