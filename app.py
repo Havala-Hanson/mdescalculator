@@ -1,13 +1,11 @@
-"""
-MDES Calculator – Landing page.
-
-This module implements the main landing page of the MDES Calculator app,
-including:
-- Hero section with a brief description
-- Design-selection tiles
-- Guided questionnaire for users unsure of their design
-- Natural-language study description with a rules-based classifier
-"""
+# MDES Calculator – Landing page.
+#
+# This module implements the main landing page of the MDES Calculator app,
+# including:
+# - Hero section with a brief description
+# - Design-selection tiles
+# - Guided questionnaire for users unsure of their design
+# - Natural-language study description with a rules-based classifier
 
 from __future__ import annotations
 
@@ -82,6 +80,9 @@ DESIGNS: list[DesignInfo] = [
         levels=3,
     ),
 ]
+
+# Map from design code to page path (derived from DESIGNS to avoid duplication)
+_PAGE_MAP: dict[str, str] = {d.code: d.page for d in DESIGNS}
 
 # Keywords for the rules-based classifier
 _KEYWORDS_L3_RANDOMIZED = [
@@ -230,15 +231,8 @@ for idx, design in enumerate(DESIGNS):
     with cols[idx % 2]:
         clicked = design_card(design, key_prefix="tile")
         if clicked:
-            page_map = {
-                "CRA2_2": "pages/1_Two_Level_CRT",
-                "BCRA2_2": "pages/3_Blocked_Design",
-                "CRA3_3": "pages/2_Three_Level_CRT",
-                "BCRA3_2": "pages/2_Three_Level_CRT",
-            }
-            target = page_map.get(design.code, "pages/1_Two_Level_CRT")
             st.session_state["selected_design"] = design.code
-            st.switch_page(target)
+            st.switch_page(_PAGE_MAP.get(design.code, "pages/1_Two_Level_CRT.py"))
 
 st.divider()
 
@@ -281,9 +275,9 @@ with st.expander("🧭 Not sure which design fits? Take the guided questionnaire
             if st.button("Open this calculator", key="guided_open"):
                 st.session_state["selected_design"] = rec
                 if rec == "BCRA2_2":
-                    st.switch_page("pages/3_Blocked_Design")
+                    st.switch_page("pages/3_Blocked_Design.py")
                 else:
-                    st.switch_page("pages/1_Two_Level_CRT")
+                    st.switch_page("pages/1_Two_Level_CRT.py")
         elif "Schools" in q1 or "hospitals" in q1.lower():
             rec = "BCRA3_2" if is_blocked else "CRA2_2"
             d = next(d for d in DESIGNS if d.code == rec)
@@ -291,16 +285,16 @@ with st.expander("🧭 Not sure which design fits? Take the guided questionnaire
             if st.button("Open this calculator", key="guided_open2"):
                 st.session_state["selected_design"] = rec
                 if rec == "BCRA3_2":
-                    st.switch_page("pages/2_Three_Level_CRT")
+                    st.switch_page("pages/2_Three_Level_CRT.py")
                 else:
-                    st.switch_page("pages/1_Two_Level_CRT")
+                    st.switch_page("pages/1_Two_Level_CRT.py")
         else:
             rec = "CRA3_3"
             d = next(d for d in DESIGNS if d.code == rec)
             st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
             if st.button("Open this calculator", key="guided_open3"):
                 st.session_state["selected_design"] = rec
-                st.switch_page("pages/2_Three_Level_CRT")
+                st.switch_page("pages/2_Three_Level_CRT.py")
 
 st.divider()
 
@@ -335,13 +329,7 @@ if nl_input and len(nl_input.strip()) > 10:
             )
             if st.button("Open recommended calculator", key="nl_open"):
                 st.session_state["selected_design"] = result.design
-                page_map = {
-                    "CRA2_2": "pages/1_Two_Level_CRT",
-                    "BCRA2_2": "pages/3_Blocked_Design",
-                    "CRA3_3": "pages/2_Three_Level_CRT",
-                    "BCRA3_2": "pages/2_Three_Level_CRT",
-                }
-                st.switch_page(page_map[result.design])
+                st.switch_page(_PAGE_MAP[result.design])
     else:
         st.warning(
             "The classifier is not confident about your design.  "
@@ -357,13 +345,7 @@ if nl_input and len(nl_input.strip()) > 10:
                         st.caption(f"`{code}` — score {score:.0%}")
                         if st.button("Select", key=f"nl_select_{code}"):
                             st.session_state["selected_design"] = code
-                            page_map = {
-                                "CRA2_2": "pages/1_Two_Level_CRT",
-                                "BCRA2_2": "pages/3_Blocked_Design",
-                                "CRA3_3": "pages/2_Three_Level_CRT",
-                                "BCRA3_2": "pages/2_Three_Level_CRT",
-                            }
-                            st.switch_page(page_map[code])
+                            st.switch_page(_PAGE_MAP[code])
         with top_cols[-1] if len(result.top_designs) < 3 else st.container():
             st.info(
                 "None of these match?  Use the guided questionnaire above or "
