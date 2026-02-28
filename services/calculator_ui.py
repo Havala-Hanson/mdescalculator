@@ -16,286 +16,338 @@ def read_initial_state(design):
 # Header + statistical background
 # ---------------------------------------------------------------------
 
+import re
+
 def render_header(design):
     hdr = design.calculator_header
 
     st.title(f"{hdr['icon']} {hdr['title']}")
     st.subheader(hdr["subtitle"])
-    st.write(hdr["description"])
+    st.markdown(hdr["description"])
 
     with st.expander("📖 Statistical background"):
-        st.markdown(design.calculator_background)
+        bg = design.calculator_background
 
+        # Auto-wrap bare formulas
+        if not re.search(r"\${1,2}.*\${1,2}", bg):
+            bg = f"$$\n{bg}\n$$"
+
+        st.markdown(bg, unsafe_allow_html=True)
+
+# ---------------------------------------------------------------------
+# Input renderers
+# ---------------------------------------------------------------------
+
+from services.dynamic_labels import dynamic_label
+from config.input_descriptions import INPUT_DESCRIPTIONS
+
+def render_input(field, state, design):
+    """
+    Render a single calculator input with:
+    - dynamic label based on design structure
+    - caption (short definition)
+    - tooltip (practical example)
+    - value stored back into session_state
+    """
+
+    # Dynamic label based on design structure
+    label = dynamic_label(field, design)
+
+    # Metadata for caption + tooltip
+    meta = INPUT_DESCRIPTIONS.get(field, {})
+    caption = meta.get("caption", "")
+    tooltip = meta.get("tooltip", "")
+
+    # Render the input
+    value = st.number_input(
+        label,
+        value=state.get(field, 0),
+        help=tooltip,
+        key=field,  # ensures Streamlit manages the widget cleanly
+    )
+
+    # Caption under the input
+    if caption:
+        st.caption(caption)
+
+    # Store updated value
+    state[field] = value
 
 # ---------------------------------------------------------------------
 # Sample size inputs (supports all families)
 # ---------------------------------------------------------------------
 
 def render_sample_inputs(design, state):
-    cfg = design.calculator_config["sample_inputs"]
-    out = {}
+    fields = design.calculator_config.get("sample_fields", [])
+    if not fields:
+        return
 
-    for field in cfg["fields"]:
-        rec = cfg["recommended"].get(field)
-        default = state[field]
+    st.subheader("Sample Size")
 
-        # Cluster-level fields
-        if field == "n_clusters":
-            out[field] = st.number_input(
-                "Number of clusters (J)",
-                min_value=3,
-                max_value=10000,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "cluster_size":
-            out[field] = st.number_input(
-                "Average cluster size (n)",
-                min_value=1,
-                max_value=10000,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "n_blocks":
-            out[field] = st.number_input(
-                "Number of blocks (B)",
-                min_value=1,
-                max_value=10000,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        # Individual-level fields
-        elif field == "n_individuals":
-            out[field] = st.number_input(
-                "Number of individuals (N)",
-                min_value=10,
-                max_value=1_000_000,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        # RD fields
-        elif field == "n_units":
-            out[field] = st.number_input(
-                "Number of units (N)",
-                min_value=100,
-                max_value=1_000_000,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "bandwidth":
-            out[field] = st.slider(
-                "Bandwidth (h)",
-                min_value=0.01,
-                max_value=5.0,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "running_var_sd":
-            out[field] = st.number_input(
-                "Running variable SD",
-                min_value=0.01,
-                max_value=10.0,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        # ITS fields
-        elif field == "n_timepoints_pre":
-            out[field] = st.number_input(
-                "Pre-intervention timepoints",
-                min_value=1,
-                max_value=200,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "n_timepoints_post":
-            out[field] = st.number_input(
-                "Post-intervention timepoints",
-                min_value=1,
-                max_value=200,
-                value=default,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        elif field == "autocorrelation":
-            out[field] = st.slider(
-                "Autocorrelation (ρ)",
-                min_value=0.0,
-                max_value=0.99,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-        # Treatment proportion
-        elif field == "p_treat":
-            out[field] = st.slider(
-                "Proportion treated (P)",
-                min_value=0.1,
-                max_value=0.9,
-                value=default,
-                step=0.05,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
-
-    return out
-
+    for field in fields:
+        render_input(field, state, design)
 
 # ---------------------------------------------------------------------
 # ICC & covariate inputs
 # ---------------------------------------------------------------------
 
 def render_icc_covariate_inputs(design, state):
-    cfg = design.calculator_config["icc_inputs"]
-    out = {}
+    icc_fields = design.calculator_config.get("icc_fields", [])
+    cov_fields = design.calculator_config.get("covariate_fields", [])
 
-    for field in cfg["fields"]:
-        rec = cfg["recommended"].get(field)
-        default = state[field]
+    if not icc_fields and not cov_fields:
+        return
 
-        if field == "icc":
-            out[field] = st.slider(
-                "Intraclass correlation (ρ)",
-                min_value=0.0,
-                max_value=0.5,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
+    st.subheader("ICC and Covariates")
 
-        elif field == "r2_level1":
-            out[field] = st.slider(
-                "Individual-level R² (R²₁)",
-                min_value=0.0,
-                max_value=0.99,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
+    for field in icc_fields + cov_fields:
+        render_input(field, state, design)
 
-        elif field == "r2_level2":
-            out[field] = st.slider(
-                "Cluster-level R² (R²₂)",
-                min_value=0.0,
-                max_value=0.99,
-                value=default,
-                step=0.01,
-                help=f"Recommended range: {rec[0]}–{rec[1]}",
-            )
+# ---------------------------------------------------------------------
+# Block-level inputs (if applicable)
+# ---------------------------------------------------------------------
 
-    return out
+def render_block_inputs(design, state):
+    fields = design.calculator_config.get("block_fields", [])
+    if not fields:
+        return
 
+    st.subheader("Blocking")
+
+    for field in fields:
+        render_input(field, state, design)
+
+# ---------------------------------------------------------------------
+# Cluster-level inputs (if applicable)
+# ---------------------------------------------------------------------
+def render_cluster_inputs(design, state):
+    fields = design.calculator_config.get("cluster_fields", [])
+    if not fields:
+        return
+
+    st.subheader("Cluster Structure")
+
+    for field in fields:
+        render_input(field, state, design)
+
+# ---------------------------------------------------------------------
+# RD-specific inputs (if applicable)
+# ---------------------------------------------------------------------
+
+def render_rd_inputs(design, state):
+    fields = design.calculator_config.get("rd_fields", [])
+    if not fields:
+        return
+
+    st.subheader("Regression Discontinuity Inputs")
+
+    for field in fields:
+        render_input(field, state, design)
+
+# ---------------------------------------------------------------------
+# ITS-specific inputs (if applicable)
+# ---------------------------------------------------------------------
+
+def render_its_inputs(design, state):
+    fields = design.calculator_config.get("its_fields", [])
+    if not fields:
+        return
+
+    st.subheader("Time Series Structure")
+
+    for field in fields:
+        render_input(field, state, design)
 
 # ---------------------------------------------------------------------
 # Test settings
 # ---------------------------------------------------------------------
 
-def render_test_settings(state):
-    alpha = st.selectbox(
-        "Significance level (α)",
-        options=[0.01, 0.05, 0.10],
-        index=[0.01, 0.05, 0.10].index(state["alpha"]),
-    )
-    power = st.selectbox(
-        "Statistical power (1 − β)",
-        options=[0.70, 0.75, 0.80, 0.85, 0.90],
-        index=[0.70, 0.75, 0.80, 0.85, 0.90].index(state["power"]),
-    )
-    return {"alpha": alpha, "power": power}
+def render_test_settings(design, state):
+    st.subheader("Test Settings")
 
+    # Always render alpha and power using the unified input renderer
+    for field in ["alpha", "power"]:
+        render_input(field, state, design)
 
 # ---------------------------------------------------------------------
 # Outcome-type inputs
 # ---------------------------------------------------------------------
 
 def render_outcome_type_inputs(design, state):
+    st.subheader("Outcome Type")
+
+    # Choose outcome type
     outcome_type = st.radio(
         "Outcome type",
         options=["continuous", "binary"],
-        index=0 if state["outcome_type"] == "continuous" else 1,
+        index=0 if state.get("outcome_type", "continuous") == "continuous" else 1,
         horizontal=True,
     )
 
+    # Store outcome type
+    state["outcome_type"] = outcome_type
+
     # Clean irrelevant state
     if outcome_type == "binary":
-        st.session_state.outcome_sd_input = None
+        state["outcome_sd_input"] = None
     else:
-        st.session_state.baseline_prob = None
+        state["baseline_prob"] = None
 
+    # Binary outcome
     if outcome_type == "binary":
         baseline_prob = st.slider(
-            "Baseline event probability (p₀)",
+            "Baseline event probability",
             min_value=0.01,
             max_value=0.99,
             value=state.get("baseline_prob", 0.50),
             step=0.01,
             format="%.2f",
         )
-        outcome_sd = math.sqrt(baseline_prob * (1 - baseline_prob))
-        return {
-            "outcome_type": "binary",
-            "baseline_prob": baseline_prob,
-            "outcome_sd": outcome_sd,
-        }
+        state["baseline_prob"] = baseline_prob
+        state["outcome_sd"] = math.sqrt(baseline_prob * (1 - baseline_prob))
+        return
 
-    else:
-        outcome_sd_input = st.number_input(
-            "Outcome SD (optional)",
-            min_value=0.0,
-            value=state.get("outcome_sd_input", 1.0),
-            step=0.1,
-        )
-        outcome_sd = outcome_sd_input if outcome_sd_input > 0 else None
-        return {
-            "outcome_type": "continuous",
-            "baseline_prob": None,
-            "outcome_sd": outcome_sd,
-        }
+    # Continuous outcome
+    outcome_sd_input = st.number_input(
+        "Outcome SD (optional)",
+        min_value=0.0,
+        value=state.get("outcome_sd_input", 1.0),
+        step=0.1,
+    )
+    state["outcome_sd_input"] = outcome_sd_input
+    state["outcome_sd"] = outcome_sd_input if outcome_sd_input > 0 else None
 
+# ---------------------------------------------------------------------
+# Results rendering
+# ---------------------------------------------------------------------
+
+def render_results(result):
+    if result is None:
+        return
+
+    st.subheader("Results")
+
+    st.metric("MDES (standardized)", f"{result.mdes:.4f}")
+    st.metric("Standard error (σ₍δ₎)", f"{result.se:.4f}")
+    st.metric("Degrees of freedom", f"{result.df}")
+    st.metric("Design effect (DEFF)", f"{result.design_effect:.3f}")
+    st.metric("Effective sample size", f"{result.effective_n:,.1f}")
+    st.metric("Total sample size", f"{result.total_n}")
+
+    if result.mdes_pct_points is not None:
+        st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f} pp")
+
+    if result.mdes_raw is not None:
+        st.metric("MDES (raw units)", f"{result.mdes_raw:.4f}")
+
+    st.markdown("### Interpretation")
+    st.write(result.interpretation)
+    
+# ---------------------------------------------------------------------
+# Top-level calculator assembly
+# ---------------------------------------------------------------------
+
+def render_calculator_page(design):
+    state = read_initial_state(design)
+
+    # Header + background
+    render_header(design)
+
+    st.markdown("---")
+
+    # Outcome type first (because it affects SD logic)
+    render_outcome_type_inputs(design, state)
+
+    st.markdown("---")
+
+    # Sample size inputs
+    render_sample_inputs(design, state)
+
+    # ICC + covariates
+    render_icc_covariate_inputs(design, state)
+
+    # Blocking (if applicable)
+    if design.calculator_config.get("block_fields"):
+        render_block_inputs(design, state)
+
+    # Cluster structure (if applicable)
+    if design.calculator_config.get("cluster_fields"):
+        render_cluster_inputs(design, state)
+
+    # RD inputs (if applicable)
+    if design.calculator_config.get("rd_fields"):
+        render_rd_inputs(design, state)
+
+    # ITS inputs (if applicable)
+    if design.calculator_config.get("its_fields"):
+        render_its_inputs(design, state)
+
+    # Test settings (alpha + power)
+    render_test_settings(design, state)
+
+    st.markdown("---")
+
+    # Run engine
+    if st.button("Compute MDES"):
+        inputs = collect_engine_inputs(design, state)
+        result = run_engine(design, inputs)
+        render_results(result)
+        render_download_button(result, state, design.calculator_header["title"], design)
 
 # ---------------------------------------------------------------------
 # Collect engine inputs
 # ---------------------------------------------------------------------
 
-def collect_engine_inputs(design, sample, icc_cov, test, outcome):
+def collect_engine_inputs(design, state):
     cfg = design.calculator_config
     inputs = {}
 
-    # Sample inputs
-    for field in cfg["sample_inputs"]["fields"]:
-        if field in sample:
-            inputs[field] = sample[field]
+    # Sample fields
+    for field in cfg.get("sample_fields", []):
+        if field in state:
+            inputs[field] = state[field]
 
-    # ICC & covariates
-    for field in cfg["icc_inputs"]["fields"]:
-        if field in icc_cov:
-            inputs[field] = icc_cov[field]
+    # ICC fields
+    for field in cfg.get("icc_fields", []):
+        if field in state:
+            inputs[field] = state[field]
 
-    # Test settings
-    for field in cfg["test_settings"]["fields"]:
-        if field in test:
-            inputs[field] = test[field]
+    # Covariate fields
+    for field in cfg.get("covariate_fields", []):
+        if field in state:
+            inputs[field] = state[field]
 
-    # Outcome-type
-    inputs["outcome_type"] = outcome["outcome_type"]
-    inputs["baseline_prob"] = outcome["baseline_prob"]
-    inputs["outcome_sd"] = outcome["outcome_sd"]
+    # Block fields
+    for field in cfg.get("block_fields", []):
+        if field in state:
+            inputs[field] = state[field]
 
-    # Treatment proportion (common)
-    if "p_treat" in sample:
-        inputs["p_treat"] = sample["p_treat"]
+    # Cluster fields
+    for field in cfg.get("cluster_fields", []):
+        if field in state:
+            inputs[field] = state[field]
+
+    # RD fields
+    for field in cfg.get("rd_fields", []):
+        if field in state:
+            inputs[field] = state[field]
+
+    # ITS fields
+    for field in cfg.get("its_fields", []):
+        if field in state:
+            inputs[field] = state[field]
+
+    # Test settings (always alpha + power)
+    for field in ["alpha", "power"]:
+        if field in state:
+            inputs[field] = state[field]
+
+    # Outcome-type fields
+    inputs["outcome_type"] = state.get("outcome_type")
+    inputs["baseline_prob"] = state.get("baseline_prob")
+    inputs["outcome_sd"] = state.get("outcome_sd")
 
     return inputs
-
 
 # ---------------------------------------------------------------------
 # Run engine 
@@ -318,8 +370,14 @@ ENGINE_MAP = {
 } 
 
 def run_engine(design, inputs):
-    engine_name = design.calculator_config["engine"]
-    engine = ENGINE_MAP[engine_name]
+    engine_name = design.calculator_config.get("engine")
+    if engine_name is None:
+        raise ValueError(f"No engine defined for design {design.code}")
+
+    engine = ENGINE_MAP.get(engine_name)
+    if engine is None:
+        raise ValueError(f"Engine '{engine_name}' not found in ENGINE_MAP")
+
     return engine(**inputs)
 
 
@@ -327,11 +385,25 @@ def run_engine(design, inputs):
 # Download block
 # ---------------------------------------------------------------------
 
-def render_download_button(result, state, design_title):
+def render_download_button(result, state, design_title, design):
     if result is None:
         return
 
     st.subheader("⬇️ Download results")
+
+    cfg = design.calculator_config
+
+    # Collect only fields relevant to this design
+    ordered_fields = (
+        cfg.get("sample_fields", [])
+        + cfg.get("icc_fields", [])
+        + cfg.get("covariate_fields", [])
+        + cfg.get("block_fields", [])
+        + cfg.get("cluster_fields", [])
+        + cfg.get("rd_fields", [])
+        + cfg.get("its_fields", [])
+        + ["alpha", "power"]
+    )
 
     summary_lines = [
         f"MDES Calculator – {design_title}",
@@ -341,19 +413,22 @@ def render_download_button(result, state, design_title):
         "-" * 45,
     ]
 
-    # Add state values
-    for key, value in state.items():
-        if key in ["outcome_sd_input", "baseline_prob", "outcome_type"]:
-            continue
-        summary_lines.append(f"{key}: {value}")
+    # Add inputs in a clean, design-specific order
+    for field in ordered_fields:
+        if field in state:
+            summary_lines.append(f"{field}: {state[field]}")
 
     # Outcome-type-specific
+    summary_lines.append(f"outcome_type: {state.get('outcome_type')}")
+
     if state.get("outcome_type") == "binary":
         summary_lines.append(f"baseline_prob: {state.get('baseline_prob')}")
+        summary_lines.append(f"outcome_sd: {state.get('outcome_sd')}")
     else:
         sd = state.get("outcome_sd_input")
         if sd is not None:
             summary_lines.append(f"outcome_sd_input: {sd}")
+        summary_lines.append(f"outcome_sd: {state.get('outcome_sd')}")
 
     summary_lines += [
         "",

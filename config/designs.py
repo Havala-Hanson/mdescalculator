@@ -59,6 +59,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
+
+        calculator_config={
+            "sample_fields": ["n_individuals"],
+            "icc_fields": [],
+            "covariate_fields": ["r2_level1"],
+            "block_fields": [],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_ira",
+        },
     ),
 
     # ─────────────────────────────────────────────────────────────
@@ -82,6 +93,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
+
+        calculator_config={
+            "sample_fields": ["n_individuals", "n_blocks"],
+            "icc_fields": [],
+            "covariate_fields": ["r2_level1"],
+            "block_fields": ["n_blocks"],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_bira",
+        },
     ),
 
     DesignInfo(
@@ -185,6 +207,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2"],
+            "block_fields": [],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_cra",
+        },
     ),
 
     DesignInfo(
@@ -205,6 +238,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+            "block_fields": [],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_cra",
+        },
     ),
 
     DesignInfo(
@@ -225,6 +269,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+            "block_fields": [],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_cra",
+        },
     ),
 
     # ─────────────────────────────────────────────────────────────
@@ -248,6 +303,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2"],
+            "block_fields": ["n_blocks"],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_bcra",
+        },
     ),
 
     DesignInfo(
@@ -268,6 +334,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+            "block_fields": ["n_blocks"],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_bcra",
+        },
     ),
 
     DesignInfo(
@@ -288,6 +365,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
+
+        calculator_config={
+            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+            "block_fields": ["n_blocks"],
+            "cluster_fields": [],
+            "rd_fields": [],
+            "its_fields": [],
+            "engine": "compute_mdes_bcra",
+        },
     ),
 
     DesignInfo(
@@ -371,6 +459,17 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
+
+        calculator_config={
+            "sample_fields": ["n_units", "bandwidth", "running_var_sd"],
+            "icc_fields": ["icc"],
+            "covariate_fields": ["r2_level1", "r2_level2"],
+            "block_fields": [],
+            "cluster_fields": [],
+            "rd_fields": ["bandwidth", "running_var_sd"],
+            "its_fields": [],
+            "engine": "compute_mdes_rd",
+        },
     ),
 
     DesignInfo(
@@ -477,13 +576,13 @@ DESIGNS: List[DesignInfo] = [
     ),
 ]
 
-from config.calculator_defaults import FAMILY_HEADERS, FAMILY_CONFIGS
+from config.calculator_defaults import FAMILY_HEADERS, DESIGN_CONFIGS
 from config.backgrounds import FAMILY_BACKGROUNDS
 
 ENRICHED_DESIGNS = []
 for d in DESIGNS:
     header = FAMILY_HEADERS.get(d.design_family)
-    config = FAMILY_CONFIGS.get(d.design_family)
+    config = DESIGN_CONFIGS.get(d.code)
     background = FAMILY_BACKGROUNDS.get(d.design_family)
 
     ENRICHED_DESIGNS.append(

@@ -137,116 +137,254 @@ MDES depends on:
     },
 }
 
-FAMILY_CONFIGS = {
+DESIGN_CONFIGS = {
+
+    # ─────────────────────────────────────────────────────────────
+    # IRA — Individual Random Assignment
+    # ─────────────────────────────────────────────────────────────
     "IRA": {
-        "sample_inputs": {
-            "fields": ["n_individuals", "p_treat"],
-            "recommended": {
-                "n_individuals": (200, 2000),
-                "p_treat": (0.4, 0.6),
-            },
-        },
-        "icc_inputs": {
-            "fields": ["r2_level1"],
-            "recommended": {"r2_level1": (0.10, 0.40)},
-        },
-        "outcome_inputs": {"supports_binary": True, "supports_continuous": True},
-        "test_settings": {"fields": ["alpha", "power"]},
+        "sample_fields": ["n_individuals"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
         "engine": "compute_mdes_ira",
     },
 
-    "CRA": {
-        "sample_inputs": {
-            "fields": ["n_clusters", "cluster_size", "p_treat"],
-            "recommended": {
-                "n_clusters": (20, 60),
-                "cluster_size": (15, 35),
-                "p_treat": (0.4, 0.6),
-            },
-        },
-        "icc_inputs": {
-            "fields": ["icc", "r2_level1", "r2_level2"],
-            "recommended": {
-                "icc": (0.05, 0.20),
-                "r2_level1": (0.10, 0.40),
-                "r2_level2": (0.20, 0.60),
-            },
-        },
-        "outcome_inputs": {"supports_binary": True, "supports_continuous": True},
-        "test_settings": {"fields": ["alpha", "power"]},
+    # ─────────────────────────────────────────────────────────────
+    # BIRA — Blocked Individual Random Assignment
+    # ─────────────────────────────────────────────────────────────
+    "BIRA2_1c": {
+        "sample_fields": ["n_individuals", "n_blocks"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bira",
+    },
+
+    "BIRA2_1f": {
+        "sample_fields": ["n_individuals", "n_blocks"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bira",
+    },
+
+    "BIRA2_1r": {
+        "sample_fields": ["n_individuals", "n_blocks"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bira",
+    },
+
+    "BIRA3_1r": {
+        "sample_fields": ["n_individuals", "n_blocks"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bira",
+    },
+
+    "BIRA4_1r": {
+        "sample_fields": ["n_individuals", "n_blocks"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bira",
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # CRA — Cluster Random Assignment
+    # ─────────────────────────────────────────────────────────────
+    "CRA2_2r": {
+        "sample_fields": ["n_clusters", "cluster_size"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
         "engine": "compute_mdes_cra",
     },
-    "BIRA": {
-        "engine": "compute_mdes_bira",
-        "sample_inputs": {
-            "fields": ["n_individuals", "n_blocks", "p_treat"],
-            "recommended": {
-                "n_individuals": [50, 5000],
-                "n_blocks": [2, 200],
-                "p_treat": [0.3, 0.7],
-            },
-        },
-        "icc_inputs": {
-            "fields": ["r2_level1"],
-            "recommended": {"r2_level1": [0.0, 0.5]},
-        },
-        "test_settings": {
-            "fields": ["alpha", "power"],
-        },
-        "outcome_inputs": {
-            "fields": ["outcome_type", "baseline_prob", "outcome_sd"],
-        },
+
+    "CRA3_3r": {
+        "sample_fields": ["n_clusters", "cluster_size"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_cra",
     },
-    "BCRA": {
-        "sample_inputs": {
-            "fields": ["n_clusters", "cluster_size", "n_blocks", "p_treat"],
-            "recommended": {
-                "n_clusters": (20, 60),
-                "cluster_size": (15, 35),
-                "n_blocks": (5, 20),
-                "p_treat": (0.4, 0.6),
-            },
-        },
-        "icc_inputs": {
-            "fields": ["icc", "r2_level1", "r2_level2"],
-            "recommended": {
-                "icc": (0.05, 0.20),
-                "r2_level1": (0.10, 0.40),
-                "r2_level2": (0.20, 0.60),
-            },
-        },
-        "outcome_inputs": {"supports_binary": True, "supports_continuous": True},
-        "test_settings": {"fields": ["alpha", "power"]},
+
+    "CRA4_4r": {
+        "sample_fields": ["n_clusters", "cluster_size"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_cra",
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # BCRA — Blocked Cluster Random Assignment
+    # ─────────────────────────────────────────────────────────────
+    "BCRA3_2f": {
+        "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
         "engine": "compute_mdes_bcra",
     },
 
-    "RD": {
-        "sample_inputs": {
-            "fields": ["n_units", "bandwidth", "running_var_sd"],
-            "recommended": {
-                "n_units": (1000, 5000),
-                "bandwidth": (0.2, 1.0),
-                "running_var_sd": (0.5, 2.0),
-            },
-        },
-        "icc_inputs": {"fields": []},
-        "outcome_inputs": {"supports_binary": True, "supports_continuous": True},
-        "test_settings": {"fields": ["alpha", "power"]},
+    "BCRA3_2r": {
+        "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bcra",
+    },
+
+    "BCRA4_2r": {
+        "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bcra",
+    },
+
+    "BCRA4_3f": {
+        "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bcra",
+    },
+
+    "BCRA4_3r": {
+        "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
+        "block_fields": ["n_blocks"],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": [],
+        "engine": "compute_mdes_bcra",
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # RD — Regression Discontinuity
+    # ─────────────────────────────────────────────────────────────
+    "RD2_1f": {
+        "sample_fields": ["n_units"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
         "engine": "compute_mdes_rd",
     },
 
+    "RD2_1r": {
+        "sample_fields": ["n_units"],
+        "icc_fields": [],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
+        "engine": "compute_mdes_rd",
+    },
+
+    "RDC_2r": {
+        "sample_fields": ["n_units"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
+        "engine": "compute_mdes_rd",
+    },
+
+    "RDC_3r": {
+        "sample_fields": ["n_units"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
+        "engine": "compute_mdes_rd",
+    },
+
+    "RD3_2f": {
+        "sample_fields": ["n_units"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
+        "engine": "compute_mdes_rd",
+    },
+
+    "RD3_2r": {
+        "sample_fields": ["n_units"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": ["bandwidth", "running_var_sd"],
+        "its_fields": [],
+        "engine": "compute_mdes_rd",
+    },
+
+    # ─────────────────────────────────────────────────────────────
+    # ITS — Interrupted Time Series
+    # ─────────────────────────────────────────────────────────────
     "ITS": {
-        "sample_inputs": {
-            "fields": ["n_timepoints_pre", "n_timepoints_post", "autocorrelation"],
-            "recommended": {
-                "n_timepoints_pre": (6, 24),
-                "n_timepoints_post": (6, 24),
-                "autocorrelation": (0.2, 0.6),
-            },
-        },
-        "icc_inputs": {"fields": []},
-        "outcome_inputs": {"supports_binary": True, "supports_continuous": True},
-        "test_settings": {"fields": ["alpha", "power"]},
+        "sample_fields": ["n_timepoints_pre", "n_timepoints_post", "n_clusters", "cluster_size"],
+        "icc_fields": ["icc"],
+        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
+        "block_fields": [],
+        "cluster_fields": [],
+        "rd_fields": [],
+        "its_fields": ["autocorrelation"],
         "engine": "compute_mdes_its",
     },
 }
