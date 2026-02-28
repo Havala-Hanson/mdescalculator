@@ -9,7 +9,8 @@ from services.prepopulate import prepopulate_for_design
 import streamlit as st
 
 def read_initial_state(design):
-    return prepopulate_for_design(design, st.session_state)
+    prepopulate_for_design(design, st.session_state)
+    return st.session_state
 
 
 # ---------------------------------------------------------------------
