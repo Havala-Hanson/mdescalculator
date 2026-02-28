@@ -1,5 +1,5 @@
 import streamlit as st
-from designs import DESIGNS, DESIGN_BY_CODE
+from config.designs import DESIGNS, DESIGN_BY_CODE
 
 st.set_page_config(page_title="MDES Calculator", layout="wide")
 
