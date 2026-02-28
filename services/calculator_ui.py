@@ -12,7 +12,6 @@ def read_initial_state(design):
     prepopulate_for_design(design, st.session_state)
     return st.session_state
 
-
 # ---------------------------------------------------------------------
 # Header + statistical background
 # ---------------------------------------------------------------------
