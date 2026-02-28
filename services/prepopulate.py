@@ -1,8 +1,7 @@
 from config.defaults import DEFAULT_INPUTS
-from config.designs import DESIGN_BY_CODE
 
-def prepopulate_for_design(design_code, session_state, outcome_type="continuous"):
-    design = DESIGN_BY_CODE[design_code]
+def prepopulate_for_design(design, session_state, outcome_type="continuous"):
+    design_code = design.code
     family = design.design_family
 
     family_defaults = DEFAULT_INPUTS.get(family, {})
