@@ -1,235 +1,180 @@
-"""
-MDES Calculator – Landing page.
-
-This module implements the main landing page of the MDES Calculator app,
-including:
-- Hero section with a brief description
-- Design-selection tiles
-- Guided questionnaire for users unsure of their design
-- Natural-language study description with a rules-based classifier
-"""
-
-from __future__ import annotations
-
-import re
-from typing import NamedTuple
-
 import streamlit as st
+from designs import DESIGNS, DESIGN_BY_CODE
 
-# ── Page configuration ────────────────────────────────────────────────────────
+st.set_page_config(page_title="MDES Calculator", layout="wide")
 
-st.set_page_config(
-    page_title="MDES Calculator",
-    page_icon="🔬",
-    layout="wide",
-    initial_sidebar_state="expanded",
+# ------------------------------------------------------------
+# Family colors (soft pastel backgrounds)
+# ------------------------------------------------------------
+FAMILY_COLORS = {
+    "IRA": "#e6f2ff",
+    "BIRA": "#f0e6ff",
+    "CRA": "#e6ffe6",
+    "BCRA": "#e6fffa",
+    "RD": "#fff2e6",
+    "ITS": "#ffe6f2",
+}
+
+# ------------------------------------------------------------
+# Header
+# ------------------------------------------------------------
+st.title("Minimum Detectable Effect Size (MDES) Calculator")
+st.write(
+    "Choose a design using the guided assistant below, or jump directly to the full list of designs."
 )
 
-# ── Design catalogue ──────────────────────────────────────────────────────────
+# ------------------------------------------------------------
+# Quick link for advanced users
+# ------------------------------------------------------------
+st.markdown("### 🔗 Already know your design?")
+st.markdown("[Jump to the full list of designs](#all-designs)", unsafe_allow_html=True)
 
-from config.designs import DESIGNS, DESIGN_BY_CODE, PAGE_BY_CODE
+st.markdown("---")
 
-#-- Classfier ____________
-from services.classifier import classify_study, ClassifierResult
+# ------------------------------------------------------------
+# Find My Design (placeholder)
+# ------------------------------------------------------------
+st.header("Find my design")
+st.write("Answer a few quick questions and we’ll identify the design that matches your study structure.")
 
+with st.expander("Open the design assistant"):
+    st.info("Design assistant coming soon — classifier integration will go here.")
 
-# ── UI helpers ────────────────────────────────────────────────────────────────
+st.markdown("---")
 
-def design_card(design: DesignInfo, key_prefix: str) -> bool:
-    """Render a design tile card.
+# ------------------------------------------------------------
+# Featured designs
+# ------------------------------------------------------------
+st.header("Featured designs")
 
-    Returns ``True`` if the user clicked the 'Use this design' button.
+featured = [d for d in DESIGNS if d.featured]
+
+if featured:
+    for d in featured:
+        st.subheader(d.title)
+        st.write(d.description)
+        if st.button(f"Use this design →", key=f"featured_{d.code}"):
+            st.switch_page(d.page)
+else:
+    st.write("No featured designs configured.")
+
+st.markdown("---")
+
+# ------------------------------------------------------------
+# Search bar
+# ------------------------------------------------------------
+st.header("All designs")
+st.markdown('<a name="all-designs"></a>', unsafe_allow_html=True)
+
+search_query = st.text_input(
+    "Search designs",
+    placeholder="Search by keyword, family, or description..."
+).lower()
+
+# ------------------------------------------------------------
+# Group designs by family
+# ------------------------------------------------------------
+families = {}
+for d in DESIGNS:
+    families.setdefault(d.design_family, []).append(d)
+
+# ------------------------------------------------------------
+# Render families with color-coded expanders + details panel
+# ------------------------------------------------------------
+for family in sorted(families.keys()):
+
+    # Filter designs by search
+    filtered_designs = [
+        d for d in families[family]
+        if search_query in d.description.lower()
+        or search_query in d.title.lower()
+        or search_query in d.code.lower()
+        or search_query in family.lower()
+    ]
+
+    if not filtered_designs:
+        continue
+
+    # Color-coded expander header
+    color = FAMILY_COLORS.get(family, "#FFFFFF")
+    expander_html = f"""
+        <div style="background-color:{color}; padding:8px; border-radius:6px; margin-bottom:4px;">
+            <strong>{family}</strong>
+        </div>
     """
-    with st.container(border=True):
-        st.markdown(f"### {design.icon} {design.title}")
-        st.caption(f"**Technical code:** `{design.code}`")
-        st.write(design.description)
-        return st.button(
-            "Use this design →",
-            key=f"{key_prefix}_{design.code}",
-            type="primary",
-        )
+    st.markdown(expander_html, unsafe_allow_html=True)
 
+    with st.expander("", expanded=False):
+        for d in filtered_designs:
 
-# Threshold for "high confidence" single-design recommendation.
-# With the rubric-based scoring (max 1.0), a score >= 0.7 indicates that at
-# least a clear assignment unit and nesting or blocking signal were detected.
-_HIGH_CONFIDENCE_THRESHOLD = 0.7
+            # Row with description + button
+            col1, col2 = st.columns([4, 1])
+            with col1:
+                st.write(f"**{d.description}**")
+            with col2:
+                if st.button("Use this design", key=f"use_{d.code}"):
+                    st.switch_page(d.page)
 
-# Help text shown when the user clicks "Something else — add more detail"
-_CLASSIFIER_HELP_TEXT = (
-    "💡 **Tips for a better match:** Try including details such as:\n"
-    "- How many levels of nesting your study has "
-    "(e.g., *students nested within schools nested within districts*)\n"
-    "- What unit is randomly assigned "
-    "(e.g., *schools are randomly assigned to treatment*)\n"
-    "- Whether randomization occurs within pre-existing groupings or blocks\n\n"
-    "Edit your description above and the classifier will update automatically."
-)
+            # Details panel
+            with st.expander("View details", expanded=False):
 
+                st.markdown(f"**Design code:** {d.code}")
+                st.markdown(f"**Assignment unit:** {d.assignment_unit}")
+                st.markdown(f"**Assignment level:** {d.assignment_level}")
+                st.markdown(f"**Number of levels:** {d.levels}")
+                st.markdown(f"**Blocked:** {'Yes' if d.is_blocked else 'No'}")
+                if d.is_blocked:
+                    st.markdown(f"**Block effect:** {d.block_effect}")
 
-def confidence_badge(confidence: float) -> str:
-    """Format a confidence value as a colour-coded badge string."""
-    if confidence >= _HIGH_CONFIDENCE_THRESHOLD:
-        return f"🟢 High confidence ({confidence:.0%})"
-    elif confidence >= 0.4:
-        return f"🟡 Moderate confidence ({confidence:.0%})"
-    else:
-        return f"🔴 Low confidence ({confidence:.0%})"
+                st.markdown(f"**Randomized:** {'Yes' if d.is_randomized else 'No'}")
+                st.markdown(f"**Quasi-experimental:** {'Yes' if d.is_quasi_experimental else 'No'}")
 
+                if d.requires_cutoff:
+                    st.markdown("**Requires cutoff:** Yes")
+                if d.requires_pre_post:
+                    st.markdown("**Requires pre/post:** Yes")
+                if d.requires_time_series:
+                    st.markdown("**Requires time series:** Yes")
+                if d.requires_cluster_assignment:
+                    st.markdown("**Requires cluster assignment:** Yes")
 
-# ── Page layout ───────────────────────────────────────────────────────────────
+                # Model sketch
+                model_forms = {
+                    "IRA": "Yᵢ = β₀ + δTᵢ + eᵢ",
+                    "BIRA": "Yᵢb = β₀ + δTᵢb + γ_b + eᵢb",
+                    "CRA": "Yᵢⱼ = β₀ + δTⱼ + uⱼ + eᵢⱼ",
+                    "BCRA": "Yᵢⱼb = β₀ + δTⱼb + γ_b + uⱼb + eᵢⱼb",
+                    "RD": "Yᵢ = β₀ + δ·1(Xᵢ ≥ c) + f(Xᵢ) + eᵢ",
+                    "ITS": "Yₜ = β₀ + β₁·timeₜ + δ·postₜ + eₜ",
+                }
+                st.markdown(f"**Model form:** `{model_forms.get(d.design_family, '')}`")
 
-# ── Hero ──────────────────────────────────────────────────────────────────────
-st.title("🔬 MDES Calculator")
-st.subheader("Minimum Detectable Effect Size for Multilevel Randomized Trials")
-st.write(
-    "This tool helps education, medical, public-health, psychology, and "
-    "social-science researchers determine the smallest effect their study "
-    "design can reliably detect.  Select your study design below, or use the "
-    "classifier to identify your design from a plain-language description."
-)
-st.divider()
+                # Typical use cases
+                st.markdown("**Typical use cases:**")
+                if d.design_family == "IRA":
+                    st.write("- Individual-level interventions without clustering.")
+                elif d.design_family == "BIRA":
+                    st.write("- Individual-level interventions randomized within blocks such as cohorts or sites.")
+                elif d.design_family == "CRA":
+                    st.write("- Cluster-level interventions such as school- or clinic-level randomization.")
+                elif d.design_family == "BCRA":
+                    st.write("- Cluster-level interventions with blocking by site, district, or cohort.")
+                elif d.design_family == "RD":
+                    st.write("- Assignment based on a cutoff in a running variable.")
+                elif d.design_family == "ITS":
+                    st.write("- Longitudinal administrative or observational data with a clear intervention point.")
 
-# ── Design tiles ──────────────────────────────────────────────────────────────
-st.header("📐 Select your study design")
-st.write(
-    "Choose the design that best matches how your study randomizes "
-    "participants.  Each tile shows a plain-language description and its "
-    "technical code."
-)
+                # Key assumptions
+                st.markdown("**Key assumptions:**")
+                if d.design_family in ["IRA", "BIRA"]:
+                    st.write("- Independence of individual outcomes within blocks.")
+                if d.design_family in ["CRA", "BCRA"]:
+                    st.write("- Independence of clusters; correct specification of cluster-level variance.")
+                if d.design_family == "RD":
+                    st.write("- Correct functional form near the cutoff; no manipulation of the running variable.")
+                if d.design_family == "ITS":
+                    st.write("- Stable pre-intervention trend; correct autocorrelation structure.")
 
-cols = st.columns(2)
-for idx, design in enumerate(DESIGNS):
-    with cols[idx % 2]:
-        clicked = design_card(design, key_prefix="tile")
-        if clicked:
-            st.session_state["selected_design"] = design.code
-            st.switch_page(design.page)
-
-st.divider()
-
-# ── Guided questionnaire ──────────────────────────────────────────────────────
-with st.expander("🧭 Not sure which design fits? Take the guided questionnaire"):
-    st.write("Answer these questions to identify your design.")
-
-    q1 = st.radio(
-        "1. What is the **unit of randomization** in your study?",
-        options=[
-            "Individuals (people are individually assigned)",
-            "Small groups / classrooms / clinics",
-            "Schools / hospitals / organizations",
-            "Districts / large systems",
-        ],
-        index=None,
-        key="q1",
-    )
-
-    q2 = st.radio(
-        "2. Are there **blocking factors** (pre-existing groups within which "
-        "randomization occurs, e.g., grade levels, geographic regions)?",
-        options=["Yes, there are blocks", "No, it is a simple random assignment"],
-        index=None,
-        key="q2",
-    )
-
-    if q1 and q2:
-        is_blocked = q2.startswith("Yes")
-        if "Individuals" in q1:
-            rec = "INDIV_RCT"
-            d = _DESIGN_BY_CODE[rec]
-            st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
-            if st.button("Open this calculator", key="guided_open_indiv"):
-                st.session_state["selected_design"] = rec
-                st.switch_page(_PAGE_BY_CODE[rec])
-        elif "Small groups" in q1 or "classrooms" in q1.lower():
-            rec = "BCRA2_2" if is_blocked else "CRA2_2"
-            d = _DESIGN_BY_CODE[rec]
-            st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
-            if st.button("Open this calculator", key="guided_open"):
-                st.session_state["selected_design"] = rec
-                st.switch_page(_PAGE_BY_CODE[rec])
-        elif "Schools" in q1 or "hospitals" in q1.lower():
-            rec = "BCRA3_2" if is_blocked else "CRA2_2"
-            d = _DESIGN_BY_CODE[rec]
-            st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
-            if st.button("Open this calculator", key="guided_open2"):
-                st.session_state["selected_design"] = rec
-                st.switch_page(_PAGE_BY_CODE[rec])
-        else:
-            rec = "CRA3_3"
-            d = _DESIGN_BY_CODE[rec]
-            st.success(f"✅ Recommended design: **{d.title}** (`{rec}`)")
-            if st.button("Open this calculator", key="guided_open3"):
-                st.session_state["selected_design"] = rec
-                st.switch_page(_PAGE_BY_CODE[rec])
-
-st.divider()
-
-# ── Natural-language classifier ───────────────────────────────────────────────
-st.header("💬 Describe your study in plain language")
-st.write(
-    "Type a brief description of your study design (e.g., *'We are randomly "
-    "assigning schools within districts to receive a new math curriculum.  "
-    "Students are nested within schools.'*).  The classifier will suggest a "
-    "design for you."
-)
-
-nl_input = st.text_area(
-    "Study description",
-    placeholder="Describe your study here…",
-    height=120,
-    key="nl_description",
-)
-
-if nl_input and len(nl_input.strip()) > 10:
-    result = classify_study(nl_input)
-    st.markdown(f"**Classification result:** {confidence_badge(result.confidence)}")
-
-    if result.confidence >= _HIGH_CONFIDENCE_THRESHOLD:
-        matched_design = _DESIGN_BY_CODE.get(result.design)
-        if matched_design:
-            st.success(
-                f"Recommended design: **{matched_design.title}** "
-                f"(`{result.design}`)"
-            )
-            if result.rationale:
-                st.caption(result.rationale)
-            if st.button("Open recommended calculator", key="nl_open"):
-                st.session_state["selected_design"] = result.design
-                st.switch_page(_PAGE_BY_CODE[result.design])
-    else:
-        st.warning(
-            "The classifier is not confident about your design.  "
-            "Here are the top matches:"
-        )
-        top_cols = st.columns(3)
-        for col_idx, (code, score) in enumerate(result.top_designs):
-            matched = _DESIGN_BY_CODE.get(code)
-            if matched:
-                with top_cols[col_idx]:
-                    with st.container(border=True):
-                        st.markdown(f"**{matched.icon} {matched.title}**")
-                        st.caption(f"`{code}` — score {score:.0%}")
-                        if st.button("Select", key=f"nl_select_{code}"):
-                            st.session_state["selected_design"] = code
-                            st.switch_page(_PAGE_BY_CODE[code])
-
-        st.write("")
-        if st.button(
-            "Something else — add more detail",
-            key="nl_something_else",
-            type="secondary",
-        ):
-            st.session_state["nl_show_hint"] = True
-
-        if st.session_state.get("nl_show_hint"):
-            st.info(_CLASSIFIER_HELP_TEXT)
-
-st.divider()
-
-# ── Footer ────────────────────────────────────────────────────────────────────
-st.caption(
-    "MDES Calculator · MIT License · "
-    "Formulas based on Bloom et al. (2007) and Dong & Maynard (2013)."
-)
+                # Action button inside details
+                if st.button("Use this design", key=f"details_use_{d.code}"):
+                    st.switch_page(d.page)
