@@ -14,9 +14,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import streamlit as st
+import math
 
 from mdes_engines import compute_mdes_cra2_2
 from mdes_engines.mdes_two_level import MDESResult, mdes_vs_clusters
+
+import streamlit as st
+import math
+
+# 1. Read outcome type FIRST
+outcome_type = st.session_state.get("outcome_type", "continuous")
+
+# 2. Read design-specific defaults from session state
+n_clusters = st.session_state.get("n_clusters", 20)
+cluster_size = st.session_state.get("cluster_size", 20)
+icc = st.session_state.get("icc", 0.10)
+effect_size = st.session_state.get("effect_size", 0.20)
+alpha = st.session_state.get("alpha", 0.05)
+power = st.session_state.get("power", 0.80)
+r2_level1 = st.session_state.get("r2_level1", 0.0)
+r2_level2 = st.session_state.get("r2_level2", 0.0)
+
+# 3. Read outcome-type-specific defaults
+baseline_prob = st.session_state.get("baseline_prob", 0.50)
+outcome_sd_input = st.session_state.get("outcome_sd_input", None)
 
 st.set_page_config(
     page_title="Two-Level CRT – MDES Calculator",
@@ -65,17 +86,17 @@ with col_left:
     st.subheader("Sample size")
     n_clusters = st.number_input(
         "Number of clusters (J)",
+        value=n_clusters,
         min_value=3,
         max_value=10_000,
-        value=40,
         step=1,
         help="Total number of clusters (e.g., schools, classrooms) in the study.",
     )
     cluster_size = st.number_input(
         "Average cluster size (n)",
+        value=cluster_size,
         min_value=1,
         max_value=10_000,
-        value=25,
         step=1,
         help="Average number of individuals per cluster.",
     )
@@ -94,31 +115,26 @@ with col_right:
         "Intraclass correlation (ρ)",
         min_value=0.00,
         max_value=0.50,
-        value=0.10,
+        value=icc,
         step=0.01,
         format="%.2f",
-        help=(
-            "Proportion of total outcome variance attributable to between-cluster "
-            "differences.  Typical education values: 0.05–0.20."
-        ),
+        help="Proportion of total outcome variance attributable to between-cluster differences.",
     )
     r2_level2 = st.slider(
         "Cluster-level covariate R² (R²₂)",
         min_value=0.00,
         max_value=0.99,
-        value=0.00,
+        value=r2_level2,
         step=0.01,
         format="%.2f",
-        help="Proportion of between-cluster variance explained by cluster-level covariates (e.g., baseline school mean).",
     )
     r2_level1 = st.slider(
         "Individual-level covariate R² (R²₁)",
         min_value=0.00,
         max_value=0.99,
-        value=0.00,
+        value=r2_level1,
         step=0.01,
         format="%.2f",
-        help="Proportion of within-cluster variance explained by individual covariates (e.g., baseline student score).",
     )
 
 st.subheader("Statistical test settings")
@@ -127,50 +143,57 @@ with col_a:
     alpha = st.selectbox(
         "Significance level (α)",
         options=[0.01, 0.05, 0.10],
-        index=1,
-        format_func=lambda x: f"{x:.2f}",
+        index=[0.01, 0.05, 0.10].index(alpha),
     )
 with col_b:
     power = st.selectbox(
         "Statistical power (1 − β)",
         options=[0.70, 0.75, 0.80, 0.85, 0.90],
-        index=2,
-        format_func=lambda x: f"{x:.0%}",
+        index=[0.70, 0.75, 0.80, 0.85, 0.90].index(power),
     )
 
+# ── Outcome type ──────────────────────────────────────────────────────────────
 st.subheader("Outcome type")
+
+# Sync radio with session state
 outcome_type = st.radio(
     "Outcome type",
     options=["continuous", "binary"],
-    index=0,
+    index=0 if outcome_type == "continuous" else 1,
     horizontal=True,
     label_visibility="collapsed",
 )
 
-baseline_prob: Optional[float] = None
-outcome_sd: Optional[float] = None
+# Clean irrelevant state
+if outcome_type == "binary":
+    st.session_state.outcome_sd_input = None
+else:
+    st.session_state.baseline_prob = None
 
+# Outcome-specific widgets
 if outcome_type == "binary":
     baseline_prob = st.slider(
         "Baseline event probability (p₀)",
         min_value=0.01,
         max_value=0.99,
-        value=0.30,
+        value=baseline_prob,
         step=0.01,
         format="%.2f",
-        help="Expected proportion of the control group experiencing the outcome.",
     )
+    outcome_sd = math.sqrt(baseline_prob * (1 - baseline_prob))
+
 else:
     outcome_sd_input = st.number_input(
         "Outcome standard deviation (optional, for raw-unit MDES)",
         min_value=0.0,
-        value=0.0,
+        value=outcome_sd_input if outcome_sd_input is not None else 1.0,
         step=0.1,
-        help="If provided, MDES will also be shown in raw units.",
     )
-    outcome_sd = outcome_sd_input if outcome_sd_input > 0 else None
-
-st.divider()
+    outcome_sd = (
+        outcome_sd_input
+        if outcome_sd_input is not None and outcome_sd_input > 0
+        else None
+    )
 
 # ── Calculation ───────────────────────────────────────────────────────────────
 try:
