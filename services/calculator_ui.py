@@ -5,23 +5,10 @@ import math
 # Read initial state
 # ---------------------------------------------------------------------
 
+from services.prepopulate import prepopulate_for_design
+
 def read_initial_state(design):
-    cfg = design.calculator_config
-    state = {}
-
-    # Shared defaults (alpha, power, etc.)
-    for key, value in design.defaults.get("shared", {}).items():
-        state[key] = st.session_state.get(key, value)
-
-    # Outcome-type defaults
-    outcome_type = st.session_state.get("outcome_type", "continuous")
-    state["outcome_type"] = outcome_type
-
-    for key, value in design.defaults.get(outcome_type, {}).items():
-        state[key] = st.session_state.get(key, value)
-
-    return state
-
+    return prepopulate_for_design(design)
 
 # ---------------------------------------------------------------------
 # Header + statistical background
