@@ -4,6 +4,7 @@ import os
 from config.designs import DESIGNS
 
 TEMPLATE = """import streamlit as st
+import os
 from config.designs import DESIGN_BY_CODE
 from services.calculator_ui import (
     read_initial_state,
@@ -17,7 +18,7 @@ from services.calculator_ui import (
     render_download_button,
 )
 
-DESIGN_CODE = __file__.split("/")[-1].replace(".py", "")
+DESIGN_CODE = os.path.splitext(os.path.basename(__file__))[0]
 design = DESIGN_BY_CODE[DESIGN_CODE]
 
 state = read_initial_state(design)
@@ -36,6 +37,7 @@ if st.button("Compute MDES"):
     st.subheader("Results")
     st.write(result)
     render_download_button(result, state, design.title)
+
 """
 
 def main():
