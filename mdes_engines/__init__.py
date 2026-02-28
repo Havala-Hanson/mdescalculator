@@ -1,24 +1,19 @@
 """
 MDES Engines – statistical computation modules for multilevel randomized trials.
-
-Supported designs
------------------
-Individual RCT   : INDIV_RCT (mdes_individual)
-Two-level CRT    : CRA2_2     (mdes_two_level)
-Three-level CRT  : CRA3_3, BCRA3_2  (mdes_three_level)
-Blocked two-level: BCRA2_2    (mdes_blocked)
 """
 
-from .mdes_two_level import compute_mdes_cra2_2
-from .mdes_three_level import compute_mdes_cra3_3, compute_mdes_bcra3_2
-from .mdes_blocked import compute_mdes_bcra2_2
-from .mdes_individual import compute_mdes_indiv_rct, required_n_for_mdes
+from .ira import compute_mdes_ira
+from .bira import compute_mdes_bira
+from .cra import compute_mdes_cra
+from .bcra import compute_mdes_bcra
+from .rd import compute_mdes_rd
+from .its import compute_mdes_its
 
 __all__ = [
-    "compute_mdes_indiv_rct",
-    "required_n_for_mdes",
-    "compute_mdes_cra2_2",
-    "compute_mdes_cra3_3",
-    "compute_mdes_bcra3_2",
-    "compute_mdes_bcra2_2",
+    "compute_mdes_ira",
+    "compute_mdes_bira",
+    "compute_mdes_cra",
+    "compute_mdes_bcra",
+    "compute_mdes_rd",
+    "compute_mdes_its",
 ]
