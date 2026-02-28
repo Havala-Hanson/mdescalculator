@@ -96,7 +96,7 @@ for family in sorted(families.keys()):
         continue
 
     # Color-coded expander header
-    color = FAMILY_COLORS.get(family, "#FFFFFF")
+    color = FAMILY_COLORS.get(family, "#383737")
     expander_html = f"""
         <div style="background-color:{color}; padding:8px; border-radius:6px; margin-bottom:4px;">
             <strong>{family}</strong>
