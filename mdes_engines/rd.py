@@ -1,27 +1,29 @@
-# mdes_engines/rd.py
-
 import math
-from mdes_engines.mdes_two_level import MDESResult, _multiplier, _interpret_mdes
+from mdes_engines.mdes_two_level import MDESResult, _multiplier
 
 
 def compute_mdes_rd(
     n_units: int,
     bandwidth: float,
     running_var_sd: float,
-    alpha: float,
-    power: float,
-    outcome_type: str,
-    baseline_prob: float,
-    outcome_sd: float,
+    kernel: str | None = None,
+    treatment_side: str | None = None,
+    alpha: float = 0.05,
+    power: float = 0.80,
+    outcome_type: str = "continuous",
+    baseline_prob: float | None = None,
+    outcome_sd: float | None = None,
 ) -> MDESResult:
     """
     Minimum detectable effect size for a simple sharp RD design.
 
-    Assumes:
+    Assumptions:
       - Single cutoff
       - Symmetric bandwidth around cutoff
       - Global linear specification
       - Equal variance on both sides
+      - Kernel and treatment_side accepted for signature alignment,
+        but not used in this simplified MDES approximation.
 
     Approximate MDES:
         MDES = M * sqrt( 1 / N_eff )
@@ -51,9 +53,7 @@ def compute_mdes_rd(
             raise ValueError("baseline_prob must be in (0, 1).")
 
     # --- Effective N near cutoff --------------------------------------
-    # Fraction of sample inside bandwidth, assuming normal running variable
     frac_in_band = bandwidth / running_var_sd
-    # Cap at 1.0 to avoid nonsense if bandwidth > SD
     frac_in_band = min(max(frac_in_band, 0.0), 1.0)
 
     n_eff = n_units * frac_in_band
@@ -88,13 +88,12 @@ def compute_mdes_rd(
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
-    # No clustering; DEFF = 1
     design_effect = 1.0
     total_n = n_units
     effective_n = n_eff
 
-    # --- Interpretation ------------------------------------------------
-    interpretation = _interpret_mdes(mdes)
+    # --- Interpretation placeholder -----------------------------------
+    interpretation = None
 
     return MDESResult(
         mdes=round(mdes, 4),

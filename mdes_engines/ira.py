@@ -1,19 +1,15 @@
-# mdes_engines/ira.py
-
 import math
-from scipy import stats
-from mdes_engines.mdes_two_level import MDESResult, _multiplier, _interpret_mdes
+from mdes_engines.mdes_two_level import MDESResult, _multiplier
 
 
 def compute_mdes_ira(
     n_individuals: int,
-    p_treat: float,
     r2_level1: float,
-    alpha: float,
-    power: float,
-    outcome_type: str,
-    baseline_prob: float,
-    outcome_sd: float,
+    alpha: float = 0.05,
+    power: float = 0.80,
+    outcome_type: str = "continuous",
+    baseline_prob: float | None = None,
+    outcome_sd: float | None = None,
 ) -> MDESResult:
     """
     Minimum detectable effect size for Individual Random Assignment (IRA).
@@ -24,16 +20,12 @@ def compute_mdes_ira(
     MDES formula:
         MDES = M * sqrt( (1 - R²) / (P(1-P) * N) )
 
-    where:
-        M = t_{1-α/2, df} + t_{power, df}
-        df = N - 2
+    We assume 50/50 treatment allocation: P = 0.5.
     """
 
     # --- Validation ----------------------------------------------------
-    if n_individuals < 10:
-        raise ValueError("n_individuals must be at least 10.")
-    if not 0 < p_treat < 1:
-        raise ValueError("p_treat must be in (0, 1).")
+    if n_individuals < 4:
+        raise ValueError("n_individuals must be at least 4.")
     if not 0 <= r2_level1 < 1:
         raise ValueError("r2_level1 must be in [0, 1).")
     if not 0 < alpha < 1:
@@ -62,7 +54,8 @@ def compute_mdes_ira(
     M = _multiplier(alpha, power, df)
 
     # --- Variance of effect estimator ---------------------------------
-    var_delta = (1 - r2_level1) / (p_treat * (1 - p_treat) * n_individuals)
+    P = 0.5  # equal allocation
+    var_delta = (1 - r2_level1) / (P * (1 - P) * n_individuals)
     se = math.sqrt(var_delta)
 
     # --- Standardized MDES --------------------------------------------
@@ -75,13 +68,13 @@ def compute_mdes_ira(
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
-    # For IRA, DEFF = 1 (no clustering)
     design_effect = 1.0
     total_n = n_individuals
     effective_n = n_individuals
 
-    # --- Interpretation ------------------------------------------------
-    interpretation = _interpret_mdes(mdes)
+    # --- Interpretation placeholder -----------------------------------
+    # Interpretation is now handled in services/interpretation.py
+    interpretation = None
 
     return MDESResult(
         mdes=round(mdes, 4),

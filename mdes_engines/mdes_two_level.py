@@ -1,11 +1,14 @@
 """
 Shared utilities for two-level clustered designs.
 
-This module intentionally contains only shared utilities that are not specific to a single design, to avoid:
+This module intentionally contains only shared utilities that are not specific
+to a single design, including:
+
 - MDESResult (shared return object for all engines)
 - _multiplier (critical-value helper)
-- _interpret_mdes (shared interpretation helper)
 - mdes_vs_clusters (visualization helper for CRA designs)
+
+Interpretation is now handled in services/interpretation.py.
 """
 
 from __future__ import annotations
@@ -16,6 +19,7 @@ from typing import Optional, Dict, List
 
 import numpy as np
 from scipy import stats
+
 
 # ---------------------------------------------------------------------
 # Shared return object for all MDES engines
@@ -46,23 +50,6 @@ def _multiplier(alpha: float, power: float, df: int) -> float:
     return float(t_alpha + t_power)
 
 
-def _interpret_mdes(mdes: float) -> str:
-    """Plain-language interpretation of standardized MDES."""
-    if mdes <= 0.20:
-        label = "small"
-    elif mdes <= 0.50:
-        label = "small-to-medium"
-    elif mdes <= 0.80:
-        label = "medium-to-large"
-    else:
-        label = "large"
-
-    return (
-        f"Your study can detect a {label} effect (d ≈ {mdes:.2f}). "
-        "Using covariates or increasing your sample size will lower the MDES."
-    )
-
-
 # ---------------------------------------------------------------------
 # Visualization helper (updated to use new CRA engine)
 # ---------------------------------------------------------------------
@@ -73,14 +60,13 @@ def mdes_vs_clusters(
     icc: float,
     r2_level1: float = 0.0,
     r2_level2: float = 0.0,
-    p_treat: float = 0.5,
     alpha: float = 0.05,
     power: float = 0.80,
 ) -> Dict[int, List[float]]:
     """
     Compute MDES curves over a range of cluster counts for multiple cluster sizes.
 
-    This function now uses the new family-level CRA engine:
+    This function uses the CRA engine:
         compute_mdes_cra
     """
 
@@ -103,7 +89,6 @@ def mdes_vs_clusters(
                     icc=icc,
                     r2_level1=r2_level1,
                     r2_level2=r2_level2,
-                    p_treat=p_treat,
                     alpha=alpha,
                     power=power,
                     outcome_type="continuous",

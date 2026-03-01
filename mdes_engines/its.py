@@ -1,18 +1,16 @@
-# mdes_engines/its.py
-
 import math
-from mdes_engines.mdes_two_level import MDESResult, _multiplier, _interpret_mdes
+from mdes_engines.mdes_two_level import MDESResult, _multiplier
 
 
 def compute_mdes_its(
     n_timepoints_pre: int,
     n_timepoints_post: int,
     autocorrelation: float,
-    alpha: float,
-    power: float,
-    outcome_type: str,
-    baseline_prob: float,
-    outcome_sd: float,
+    alpha: float = 0.05,
+    power: float = 0.80,
+    outcome_type: str = "continuous",
+    baseline_prob: float | None = None,
+    outcome_sd: float | None = None,
 ) -> MDESResult:
     """
     Minimum detectable effect size for a single-series Interrupted Time Series (ITS)
@@ -20,7 +18,7 @@ def compute_mdes_its(
 
     Approximate variance for the level-change estimator:
 
-        Var(delta) ≈ (sigma^2 / N_eff)
+        Var(delta) ≈ sigma^2 / N_eff
 
     where N_eff is an effective number of independent timepoints that
     accounts for AR(1) autocorrelation.
@@ -52,7 +50,6 @@ def compute_mdes_its(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- Effective N under AR(1) --------------------------------------
-    # Simple approximation: N_eff = T * (1 - phi) / (1 + phi)
     phi = autocorrelation
     if abs(phi) < 1e-6:
         n_eff = float(T)
@@ -71,7 +68,6 @@ def compute_mdes_its(
     M = _multiplier(alpha, power, df)
 
     # --- Variance of level-change estimator ---------------------------
-    # Approximate: Var(delta) ≈ sigma^2 / N_eff  (standardized sigma^2 = 1)
     var_delta = 1.0 / n_eff
     se = math.sqrt(var_delta)
 
@@ -85,13 +81,12 @@ def compute_mdes_its(
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
-    # Single series; DEFF = 1, but we report effective N as N_eff
     design_effect = 1.0
     total_n = T
     effective_n = n_eff
 
-    # --- Interpretation ------------------------------------------------
-    interpretation = _interpret_mdes(mdes)
+    # --- Interpretation placeholder -----------------------------------
+    interpretation = None
 
     return MDESResult(
         mdes=round(mdes, 4),

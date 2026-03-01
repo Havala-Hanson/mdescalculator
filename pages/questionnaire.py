@@ -226,14 +226,34 @@ if len(remaining) == 1:
 
 
 # ─────────────────────────────────────────────────────────────
-# Final fallback (should rarely happen)
+# Final fallback with refinement option
 # ─────────────────────────────────────────────────────────────
 
 if len(remaining) > 1:
     st.warning(
         "Multiple designs still match your answers. "
-        "Try refining your responses or provide more detail."
+        "You can refine your responses or provide a short description to help us choose."
     )
+
     st.write("Remaining candidates:")
     for d in remaining:
         st.write(f"- **{d.title}** (`{d.code}`)")
+
+    st.markdown("---")
+    st.subheader("Optional: Add more detail")
+
+    from services.security import sanitize_text, SecurityError
+
+    extra = st.text_area(
+        "Describe anything unusual about your assignment or data structure.",
+        height=80,
+        key="questionnaire_extra"
+    )
+
+    if st.button("Refine with classifier"):
+        try:
+            safe_extra = sanitize_text(extra)
+            st.session_state["classifier_input"] = safe_extra
+            st.switch_page("pages/classifier.py")
+        except SecurityError as e:
+            st.warning(str(e))

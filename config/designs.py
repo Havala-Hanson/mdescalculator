@@ -459,69 +459,22 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
-
-        calculator_config={
-            "sample_fields": ["n_units", "bandwidth", "running_var_sd"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2"],
-            "block_fields": [],
-            "cluster_fields": [],
-            "rd_fields": ["bandwidth", "running_var_sd"],
-            "its_fields": [],
-            "engine": "compute_mdes_rd",
-        },
     ),
-
     DesignInfo(
-        code="RDC_2r",
-        title="Cluster Regression Discontinuity (2-level, random block effect)",
-        description="Cluster-level RD with random block effects.",
-        icon="📈",
-        page="pages/RDC_2r.py",
-        is_blocked=False,
-        levels=2,
-        assignment_unit="cluster",
-        assignment_level=2,
-        block_effect="random",
-        design_family="RD",
-        is_randomized=False,
-        is_quasi_experimental=True,
-        requires_cutoff=True,
-        requires_pre_post=False,
-        requires_time_series=False,
-        requires_cluster_assignment=True,
-    ),
-
-    DesignInfo(
-        code="RDC_3r",
-        title="Cluster Regression Discontinuity (3-level, random block effect)",
-        description="Cluster-level RD in a 3-level structure.",
-        icon="📈",
-        page="pages/RDC_3r.py",
-        is_blocked=False,
-        levels=3,
-        assignment_unit="cluster",
-        assignment_level=3,
-        block_effect="random",
-        design_family="RD",
-        is_randomized=False,
-        is_quasi_experimental=True,
-        requires_cutoff=True,
-        requires_pre_post=False,
-        requires_time_series=False,
-        requires_cluster_assignment=True,
-    ),
-
-    DesignInfo(
-        code="RD3_2f",
-        title="Regression Discontinuity (3-level, cluster assignment, fixed block effect)",
-        description="Cluster-level RD with fixed block effects in a 3-level structure.",
-        icon="📈",
-        page="pages/RD3_2f.py",
+        code="RD3_1f",
+        title="Regression Discontinuity (3-level, individual assignment, fixed block effect)",
+        description=(
+            "A three-level regression discontinuity design where the highest level "
+            "(e.g., districts or sites) is included as fixed effects. Level-3 variance "
+            "is absorbed by blocking, and treatment is assigned by a cutoff on a "
+            "running variable."
+        ),
+        icon="📉",
+        page="pages/RD3_1f.py",
         is_blocked=True,
         levels=3,
-        assignment_unit="cluster",
-        assignment_level=2,
+        assignment_unit="individual",
+        assignment_level=1,
         block_effect="fixed",
         design_family="RD",
         is_randomized=False,
@@ -529,51 +482,62 @@ DESIGNS: List[DesignInfo] = [
         requires_cutoff=True,
         requires_pre_post=False,
         requires_time_series=False,
-        requires_cluster_assignment=True,
+        requires_cluster_assignment=False,
     ),
 
     DesignInfo(
-        code="RD3_2r",
-        title="Regression Discontinuity (3-level, cluster assignment, random block effect)",
-        description="Cluster-level RD with random block effects in a 3-level structure.",
+        code="RD3_1r",
+        title="Regression Discontinuity (3-level, individual assignment, unblocked)",
+        description=(
+            "A three-level regression discontinuity design without blocking at the "
+            "highest level. Level-3 variance contributes to the MDES, and covariates "
+            "at all levels may reduce residual variance. Treatment is assigned by a "
+            "cutoff on a running variable."
+        ),
         icon="📈",
-        page="pages/RD3_2r.py",
-        is_blocked=True,
+        page="pages/RD3_1r.py",
+        is_blocked=False,
         levels=3,
-        assignment_unit="cluster",
-        assignment_level=2,
-        block_effect="random",
+        assignment_unit="individual",
+        assignment_level=1,
+        block_effect=None,
         design_family="RD",
         is_randomized=False,
         is_quasi_experimental=True,
         requires_cutoff=True,
         requires_pre_post=False,
         requires_time_series=False,
-        requires_cluster_assignment=True,
+        requires_cluster_assignment=False,
     ),
 
+  
     # ─────────────────────────────────────────────────────────────
     # Interrupted Time Series (ITS)
     # ─────────────────────────────────────────────────────────────
     DesignInfo(
         code="ITS",
         title="Interrupted Time Series",
-        description="A quasi-experimental design using longitudinal data before and after an intervention.",
+        description=(
+            "A quasi-experimental design using segmented regression on a single "
+            "time series with pre- and post-intervention periods. Autocorrelation "
+            "and the number of time points determine statistical power."
+        ),
         icon="⏱️",
         page="pages/ITS.py",
-        is_blocked=True,
-        levels=3,
-        assignment_unit="cluster",
-        assignment_level=2,
-        block_effect="constant",
+        is_blocked=False,
+        levels=1,
+        assignment_unit=None,
+        assignment_level=None,
+        block_effect=None,
         design_family="ITS",
         is_randomized=False,
         is_quasi_experimental=True,
         requires_cutoff=False,
         requires_pre_post=True,
         requires_time_series=True,
-        requires_cluster_assignment=True,
+        requires_cluster_assignment=False,
     ),
+
 ]
 
 from config.calculator_defaults import FAMILY_HEADERS, DESIGN_CONFIGS

@@ -1,7 +1,5 @@
-# mdes_engines/bcra.py
-
 import math
-from mdes_engines.mdes_two_level import MDESResult, _multiplier, _interpret_mdes
+from mdes_engines.mdes_two_level import MDESResult, _multiplier
 
 
 def compute_mdes_bcra(
@@ -11,29 +9,27 @@ def compute_mdes_bcra(
     icc: float,
     r2_level1: float,
     r2_level2: float,
-    p_treat: float,
-    alpha: float,
-    power: float,
-    outcome_type: str,
-    baseline_prob: float,
-    outcome_sd: float,
+    r2_level3: float | None = None,
+    r2_level4: float | None = None,
+    alpha: float = 0.05,
+    power: float = 0.80,
+    outcome_type: str = "continuous",
+    baseline_prob: float | None = None,
+    outcome_sd: float | None = None,
 ) -> MDESResult:
     """
     Minimum detectable effect size for Blocked Cluster Random Assignment (BCRA).
 
-    Model:
-        Y_ijb = β0 + δ T_jb + γ_b + u_jb + e_ijb
+    Core variance structure (Dong & Maynard 2013):
 
-    MDES formula:
-        MDES = M * sqrt( Var_delta ) * sqrt(B / (B - 1))
+        Var(delta) =
+            [ ρ (1 - R2_2) / (P(1-P) * B) ] +
+            [ (1 - ρ)(1 - R2_1) / (P(1-P) * B * n) ]
 
-    where Var_delta is the CRA variance:
-        Var_delta = ρ(1 - R²₂) / [P(1-P) J]
-                    + (1 - ρ)(1 - R²₁) / [P(1-P) J n]
+    with block adjustment:
+            B / (B - 1)
 
-    and:
-        M  = t_{1-α/2, df} + t_{power, df}
-        df = J - B - 1   (clusters within blocks)
+    We assume equal allocation: P = 0.5.
     """
 
     # --- Validation ----------------------------------------------------
@@ -49,8 +45,6 @@ def compute_mdes_bcra(
         raise ValueError("r2_level1 must be in [0, 1).")
     if not 0 <= r2_level2 < 1:
         raise ValueError("r2_level2 must be in [0, 1).")
-    if not 0 < p_treat < 1:
-        raise ValueError("p_treat must be in (0, 1).")
     if not 0 < alpha < 1:
         raise ValueError("alpha must be in (0, 1).")
     if not 0 < power < 1:
@@ -63,10 +57,9 @@ def compute_mdes_bcra(
             raise ValueError("baseline_prob must be in (0, 1).")
 
     # --- Degrees of freedom -------------------------------------------
-    # Clusters within blocks: df ≈ J - B - 1
-    df = n_clusters - n_blocks - 1
+    df = n_blocks - 2
     if df <= 1:
-        raise ValueError("Not enough clusters/blocks for valid degrees of freedom.")
+        raise ValueError("Not enough blocks for valid degrees of freedom.")
 
     # --- Outcome SD ----------------------------------------------------
     if outcome_type == "binary":
@@ -77,15 +70,20 @@ def compute_mdes_bcra(
     # --- M multiplier --------------------------------------------------
     M = _multiplier(alpha, power, df)
 
-    # --- CRA variance component ---------------------------------------
-    var_cra = (
-        icc * (1 - r2_level2) / (p_treat * (1 - p_treat) * n_clusters)
-        + (1 - icc) * (1 - r2_level1)
-        / (p_treat * (1 - p_treat) * n_clusters * cluster_size)
-    )
+    # --- Variance components ------------------------------------------
+    B = n_blocks
+    J = n_clusters
+    n = cluster_size
+    rho = icc
+    P = 0.5
 
-    # --- Block factor --------------------------------------------------
-    block_factor = n_blocks / (n_blocks - 1)
+    term_between = rho * (1 - r2_level2) / (P * (1 - P) * B)
+    term_within = (1 - rho) * (1 - r2_level1) / (P * (1 - P) * B * n)
+
+    var_cra = term_between + term_within
+
+    # Block adjustment
+    block_factor = B / (B - 1)
 
     var_delta = var_cra * block_factor
     se = math.sqrt(var_delta)
@@ -104,8 +102,8 @@ def compute_mdes_bcra(
     total_n = n_clusters * cluster_size
     effective_n = total_n / design_effect
 
-    # --- Interpretation ------------------------------------------------
-    interpretation = _interpret_mdes(mdes)
+    # --- Interpretation placeholder -----------------------------------
+    interpretation = None
 
     return MDESResult(
         mdes=round(mdes, 4),
