@@ -1,5 +1,6 @@
 import streamlit as st
 from config.designs import DESIGNS, DESIGN_BY_CODE
+from services.security import sanitize_text, SecurityError
 
 st.set_page_config(page_title="MDES Calculator", layout="wide")
 
@@ -32,13 +33,33 @@ st.markdown("[Jump to the full list of designs](#all-designs)", unsafe_allow_htm
 st.markdown("---")
 
 # ------------------------------------------------------------
-# Find My Design (placeholder)
+# Find My Design (classifier integration)
 # ------------------------------------------------------------
 st.header("Find my design")
-st.write("Answer a few quick questions and we’ll identify the design that matches your study structure.")
+st.write("Describe your study in a few sentences and we’ll identify the most likely design.")
 
-with st.expander("Open the design assistant"):
-    st.info("Design assistant coming soon — classifier integration will go here.")
+with st.expander("Design assistant", expanded=True):
+
+    user_text = st.text_area(
+        "Study description",
+        placeholder="Example: We randomly assign teachers within schools to receive coaching...",
+        height=100,
+        key="classifier_text_input"
+    )
+
+    col1, col2 = st.columns([1, 1])
+
+    with col1:
+        if st.button("Classify my study", key="run_classifier"):
+            try:
+                safe_text = sanitize_text(user_text)
+                st.session_state["classifier_input"] = safe_text
+                st.switch_page("pages/classifier.py")
+            except SecurityError as e:
+                st.warning(str(e))
+
+    with col2:
+        st.page_link("pages/questionnaire.py", label="Try the guided questionnaire →")
 
 st.markdown("---")
 
@@ -83,7 +104,6 @@ for d in DESIGNS:
 # ------------------------------------------------------------
 for family in sorted(families.keys()):
 
-    # Filter designs by search
     filtered_designs = [
         d for d in families[family]
         if search_query in d.description.lower()
@@ -95,7 +115,6 @@ for family in sorted(families.keys()):
     if not filtered_designs:
         continue
 
-    # Color-coded expander header
     color = FAMILY_COLORS.get(family, "#383737")
     expander_html = f"""
         <div style="background-color:{color}; padding:8px; border-radius:6px; margin-bottom:4px;">
@@ -107,7 +126,6 @@ for family in sorted(families.keys()):
     with st.expander("", expanded=False):
         for d in filtered_designs:
 
-            # Row with description + button
             col1, col2 = st.columns([4, 1])
             with col1:
                 st.write(f"**{d.description}**")
@@ -115,7 +133,6 @@ for family in sorted(families.keys()):
                 if st.button("Use this design", key=f"use_{d.code}"):
                     st.switch_page(d.page)
 
-            # Details panel
             with st.expander("View details", expanded=False):
 
                 st.markdown(f"**Design code:** {d.code}")
@@ -138,7 +155,6 @@ for family in sorted(families.keys()):
                 if d.requires_cluster_assignment:
                     st.markdown("**Requires cluster assignment:** Yes")
 
-                # Model sketch
                 model_forms = {
                     "IRA": "Yᵢ = β₀ + δTᵢ + eᵢ",
                     "BIRA": "Yᵢb = β₀ + δTᵢb + γ_b + eᵢb",
@@ -149,7 +165,6 @@ for family in sorted(families.keys()):
                 }
                 st.markdown(f"**Model form:** `{model_forms.get(d.design_family, '')}`")
 
-                # Typical use cases
                 st.markdown("**Typical use cases:**")
                 if d.design_family == "IRA":
                     st.write("- Individual-level interventions without clustering.")
@@ -164,7 +179,6 @@ for family in sorted(families.keys()):
                 elif d.design_family == "ITS":
                     st.write("- Longitudinal administrative or observational data with a clear intervention point.")
 
-                # Key assumptions
                 st.markdown("**Key assumptions:**")
                 if d.design_family in ["IRA", "BIRA"]:
                     st.write("- Independence of individual outcomes within blocks.")
@@ -175,6 +189,5 @@ for family in sorted(families.keys()):
                 if d.design_family == "ITS":
                     st.write("- Stable pre-intervention trend; correct autocorrelation structure.")
 
-                # Action button inside details
                 if st.button("Use this design", key=f"details_use_{d.code}"):
                     st.switch_page(d.page)
