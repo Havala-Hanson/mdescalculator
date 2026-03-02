@@ -1,3 +1,5 @@
+# pages/cra2_2r.py
+
 import streamlit as st
 from config.designs import DESIGN_BY_CODE
 from mdes_engines.cra import compute_mdes_cra
@@ -84,6 +86,29 @@ def render_inputs(design):
     # -----------------------------
     # Test settings
     # -----------------------------
+    two_tailed = st.checkbox(
+        "Two-tailed test",
+        value=True,
+    )
+
+    p_treat = st.number_input(
+        "Treatment proportion (p)",
+        min_value=0.01,
+        max_value=0.99,
+        value=0.50,
+        step=0.01,
+        help="Proportion of clusters assigned to treatment. R default: 0.50.",
+    )
+
+    rel1 = st.number_input(
+        "Outcome reliability (rel1)",
+        min_value=0.01,
+        max_value=1.00,
+        value=1.00,
+        step=0.01,
+        help="Reliability of the level-1 outcome measure. R default: 1.0 (perfect reliability).",
+    )
+
     alpha = st.number_input(
         "Significance level (α)",
         min_value=0.001,
@@ -109,6 +134,9 @@ def render_inputs(design):
         "icc": icc,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
+        "p_treat": p_treat,
+        "rel1": rel1,
+        "two_tailed": two_tailed,
         "alpha": alpha,
         "power": power,
         "outcome_type": outcome_type,

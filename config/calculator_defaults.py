@@ -157,58 +157,63 @@ DESIGN_CONFIGS = {
     # BIRA — Blocked Individual Random Assignment
     # ─────────────────────────────────────────────────────────────
     "BIRA2_1c": {
+        # N = J * n; UI gives total N and number of blocks
         "sample_fields": ["n_individuals", "n_blocks"],
-        "icc_fields": [],
-        "covariate_fields": ["r2_level1", "r2_level2"],
+        "icc_fields": [],  # no ICCs in constant block effect model
+        "covariate_fields": ["r2_level1"],  # only level-1 R²
         "block_fields": ["n_blocks"],
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bira",
+        "engine": "compute_mdes_bira2_1c",
     },
 
     "BIRA2_1f": {
+        # Bloom-style fixed block effects with block–treatment interactions
         "sample_fields": ["n_individuals", "n_blocks"],
-        "icc_fields": [],
-        "covariate_fields": ["r2_level1", "r2_level2"],
+        "icc_fields": [],  # still no ICCs; blocks are fixed
+        "covariate_fields": ["r2_level1"],  # level-1 covariates only
         "block_fields": ["n_blocks"],
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bira",
+        "engine": "compute_mdes_bira2_1f",
     },
 
     "BIRA2_1r": {
+        # Random block effects; requires ICC2 and block-level R²
         "sample_fields": ["n_individuals", "n_blocks"],
-        "icc_fields": [],
-        "covariate_fields": ["r2_level1", "r2_level2"],
+        "icc_fields": ["icc2"],
+        "covariate_fields": ["r2_level1", "r2_level2"],  # r21, r2t2
         "block_fields": ["n_blocks"],
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bira",
+        "engine": "compute_mdes_bira2_1r",
     },
 
     "BIRA3_1r": {
-        "sample_fields": ["n_individuals", "n_blocks"],
-        "icc_fields": [],
+        # 3-level: individuals in clusters in blocks; random blocks + clusters
+        "sample_fields": ["n_blocks", "n_clusters_per_block", "cluster_size"],
+        "icc_fields": ["icc2", "icc3"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
-        "cluster_fields": [],
+        "cluster_fields": ["n_clusters_per_block", "cluster_size"],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bira",
+        "engine": "compute_mdes_bira3_1r",
     },
 
     "BIRA4_1r": {
-        "sample_fields": ["n_individuals", "n_blocks"],
-        "icc_fields": [],
+        # 4-level: individuals in clusters in sites in blocks
+        "sample_fields": ["n_blocks", "n_sites_per_block", "n_clusters_per_site", "cluster_size"],
+        "icc_fields": ["icc2", "icc3", "icc4"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": ["n_blocks"],
-        "cluster_fields": [],
+        "cluster_fields": ["n_sites_per_block", "n_clusters_per_site", "cluster_size"],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bira",
+        "engine": "compute_mdes_bira4_1r",
     },
 
     # ─────────────────────────────────────────────────────────────
@@ -233,7 +238,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_cra",
+        "engine": "compute_mdes_cra3_3",
     },
 
     "CRA4_4r": {
@@ -244,7 +249,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_cra",
+        "engine": "compute_mdes_cra4_4",
     },
 
     # ─────────────────────────────────────────────────────────────

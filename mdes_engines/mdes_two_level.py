@@ -42,10 +42,11 @@ class MDESResult:
 # Shared helpers
 # ---------------------------------------------------------------------
 
-def _multiplier(alpha: float, power: float, df: int) -> float:
-    """Compute M = t_{1-α/2, df} + t_{power, df}."""
+def _multiplier(alpha: float, power: float, df: int, two_tailed: bool = True) -> float:
+    """Compute M = t_{1-α/2, df} + t_{power, df} (two-tailed) or
+    M = t_{1-α, df} + t_{power, df} (one-tailed)."""
     effective_df = max(df, 1)
-    t_alpha = stats.t.ppf(1.0 - alpha / 2.0, effective_df)
+    t_alpha = stats.t.ppf(1.0 - alpha / 2.0 if two_tailed else 1.0 - alpha, effective_df)
     t_power = stats.t.ppf(power, effective_df)
     return float(t_alpha + t_power)
 

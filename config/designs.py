@@ -59,17 +59,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
-
-        calculator_config={
-            "sample_fields": ["n_individuals"],
-            "icc_fields": [],
-            "covariate_fields": ["r2_level1"],
-            "block_fields": [],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_ira",
-        },
     ),
 
     # ─────────────────────────────────────────────────────────────
@@ -78,7 +67,7 @@ DESIGNS: List[DesignInfo] = [
     DesignInfo(
         code="BIRA2_1c",
         title="Blocked Individual Random Assignment (constant block effect)",
-        description="Individuals are randomized within blocks; block effects treated as constant.",
+        description="Individuals are randomized within blocks; block effects treated as constant (treatment effect does not vary across blocks).",
         icon="🧍",
         page="pages/BIRA2_1c.py",
         is_blocked=True,
@@ -93,23 +82,12 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=False,
-
-        calculator_config={
-            "sample_fields": ["n_individuals", "n_blocks"],
-            "icc_fields": [],
-            "covariate_fields": ["r2_level1"],
-            "block_fields": ["n_blocks"],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_bira",
-        },
     ),
 
     DesignInfo(
         code="BIRA2_1f",
         title="Blocked Individual Random Assignment (fixed block effect)",
-        description="Individuals are randomized within blocks; block effects treated as fixed.",
+        description="Individuals are randomized within blocks; block effects treated as fixed with block–treatment interactions.",
         icon="🧍",
         page="pages/BIRA2_1f.py",
         is_blocked=True,
@@ -148,8 +126,8 @@ DESIGNS: List[DesignInfo] = [
 
     DesignInfo(
         code="BIRA3_1r",
-        title="Blocked Individual Random Assignment (3-level, random block effect)",
-        description="Individuals are randomized within blocks in a 3-level structure.",
+        title="Blocked Individual Random Assignment (3-level, random effects)",
+        description="Three-level blocked IRA with random block and cluster effects.",
         icon="🧍",
         page="pages/BIRA3_1r.py",
         is_blocked=True,
@@ -168,8 +146,8 @@ DESIGNS: List[DesignInfo] = [
 
     DesignInfo(
         code="BIRA4_1r",
-        title="Blocked Individual Random Assignment (4-level, random block effect)",
-        description="Individuals are randomized within blocks in a 4-level structure.",
+        title="Blocked Individual Random Assignment (4-level, random effects)",
+        description="Four-level blocked IRA with random block, site, and cluster effects.",
         icon="🧍",
         page="pages/BIRA4_1r.py",
         is_blocked=True,
@@ -185,7 +163,6 @@ DESIGNS: List[DesignInfo] = [
         requires_time_series=False,
         requires_cluster_assignment=False,
     ),
-
     # ─────────────────────────────────────────────────────────────
     # Cluster Random Assignment (CRA)
     # ─────────────────────────────────────────────────────────────
@@ -207,17 +184,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2"],
-            "block_fields": [],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_cra",
-        },
     ),
 
     DesignInfo(
@@ -238,17 +204,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
-            "block_fields": [],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_cra",
-        },
     ),
 
     DesignInfo(
@@ -269,17 +224,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
-            "block_fields": [],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_cra",
-        },
     ),
 
     # ─────────────────────────────────────────────────────────────
@@ -303,17 +247,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2"],
-            "block_fields": ["n_blocks"],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_bcra",
-        },
     ),
 
     DesignInfo(
@@ -334,17 +267,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
-            "block_fields": ["n_blocks"],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_bcra",
-        },
     ),
 
     DesignInfo(
@@ -365,17 +287,6 @@ DESIGNS: List[DesignInfo] = [
         requires_pre_post=False,
         requires_time_series=False,
         requires_cluster_assignment=True,
-
-        calculator_config={
-            "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
-            "icc_fields": ["icc"],
-            "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
-            "block_fields": ["n_blocks"],
-            "cluster_fields": [],
-            "rd_fields": [],
-            "its_fields": [],
-            "engine": "compute_mdes_bcra",
-        },
     ),
 
     DesignInfo(
@@ -558,8 +469,6 @@ for d in DESIGNS:
     )
 
 DESIGNS = ENRICHED_DESIGNS
-DESIGN_BY_CODE = {d.code: d for d in DESIGNS}
-PAGE_BY_CODE = {d.code: d.page for d in DESIGNS}
 
 # ─────────────────────────────────────────────────────────────
 # Lookup tables

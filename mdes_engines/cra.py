@@ -8,8 +8,10 @@ def compute_mdes_cra(
     icc: float,
     r2_level1: float,
     r2_level2: float,
-    r2_level3: float | None = None,
-    r2_level4: float | None = None,
+    p_treat: float = 0.5,
+    rel1: float = 1.0,
+    g2: int = 0,
+    two_tailed: bool = True,
     alpha: float = 0.05,
     power: float = 0.80,
     outcome_type: str = "continuous",
@@ -17,16 +19,24 @@ def compute_mdes_cra(
     outcome_sd: float | None = None,
 ) -> MDESResult:
     """
-    MDES for Cluster Random Assignment (CRA), 2–4 level variants.
+    MDES for two-level Cluster Random Assignment (CRA2_2r).
 
-    Core 2-level formula (Bloom 2007 / Dong & Maynard 2013):
+    Mirrors R's mdes.cra2r2 (PowerUpR / PowerUp!):
 
-        Var(delta) = σ_y^2 * [
-            ρ (1 - R2_2) / (P(1-P) J)
-          + (1 - ρ) (1 - R2_1) / (P(1-P) J n)
+        df  = J - g2 - 2
+        SSE = sqrt[
+            ρ (1 - R²₂) / (p(1-p) J)
+          + (1 - ρ) (1 - R²₁) / (p(1-p) J n · rel1)
         ]
 
-    We assume 50/50 treatment allocation: P = 0.5.
+    Parameters
+    ----------
+    p_treat  : treatment proportion (R: p, default 0.50)
+    rel1     : outcome measurement reliability (R: rel1, default 1.0)
+    g2       : number of level-2 covariates for df adjustment (R: g2, default 0)
+    two_tailed: use two-tailed critical value (R: two.tailed, default True)
+
+    For 3-level designs use compute_mdes_cra3_3; for 4-level use compute_mdes_cra4_4.
     """
 
     # --- Validation ----------------------------------------------------
@@ -40,6 +50,12 @@ def compute_mdes_cra(
         raise ValueError("r2_level1 must be in [0, 1).")
     if not 0 <= r2_level2 < 1:
         raise ValueError("r2_level2 must be in [0, 1).")
+    if not 0 < p_treat < 1:
+        raise ValueError("p_treat must be in (0, 1).")
+    if not 0 < rel1 <= 1:
+        raise ValueError("rel1 must be in (0, 1].")
+    if g2 < 0:
+        raise ValueError("g2 must be >= 0.")
     if not 0 < alpha < 1:
         raise ValueError("alpha must be in (0, 1).")
     if not 0 < power < 1:
@@ -52,9 +68,9 @@ def compute_mdes_cra(
             raise ValueError("baseline_prob must be in (0, 1).")
 
     # --- Degrees of freedom -------------------------------------------
-    df = n_clusters - 2
+    df = n_clusters - g2 - 2
     if df <= 1:
-        raise ValueError("Not enough clusters for valid degrees of freedom.")
+        raise ValueError("Not enough clusters for valid degrees of freedom (J - g2 - 2 must be > 1).")
 
     # --- Outcome SD ----------------------------------------------------
     if outcome_type == "binary":
@@ -63,16 +79,16 @@ def compute_mdes_cra(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     J = n_clusters
     n = cluster_size
     rho = icc
-    P = 0.5  # equal allocation
+    P = p_treat
 
     term_between = rho * (1 - r2_level2) / (P * (1 - P) * J)
-    term_within = (1 - rho) * (1 - r2_level1) / (P * (1 - P) * J * n)
+    term_within = (1 - rho) * (1 - r2_level1) / (P * (1 - P) * J * n * rel1)
 
     var_delta = term_between + term_within
     se = math.sqrt(var_delta)

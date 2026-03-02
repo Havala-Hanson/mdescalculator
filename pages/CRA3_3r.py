@@ -1,3 +1,5 @@
+# pages/CRA3_3r.py
+
 import streamlit as st
 from config.designs import DESIGN_BY_CODE
 from mdes_engines.mdes_three_level import compute_mdes_cra3_3
@@ -110,6 +112,20 @@ def render_inputs(design):
     # -----------------------------
     # Test settings
     # -----------------------------
+    two_tailed = st.checkbox(
+        "Two-tailed test",
+        value=True,
+    )
+
+    p_treat = st.number_input(
+        "Treatment proportion (p)",
+        min_value=0.01,
+        max_value=0.99,
+        value=0.50,
+        step=0.01,
+        help="Proportion of level-3 units assigned to treatment. R default: 0.50.",
+    )
+
     alpha = st.number_input(
         "Significance level (α)",
         min_value=0.001,
@@ -138,6 +154,8 @@ def render_inputs(design):
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
         "r2_level3": r2_level3,
+        "p_treat": p_treat,
+        "two_tailed": two_tailed,
         "alpha": alpha,
         "power": power,
         "outcome_type": outcome_type,

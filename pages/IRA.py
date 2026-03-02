@@ -49,6 +49,24 @@ def render_inputs(design):
             step=0.1,
         )
 
+    p = st.number_input(
+        "Treatment proportion (p)",
+        min_value=0.01,
+        max_value=0.99,
+        value=0.50,
+        step=0.01,
+        help="Proportion of individuals assigned to treatment. R default: 0.50.",
+    )
+
+    g1 = st.number_input(
+        "Number of covariates (g1)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of covariates for degrees of freedom adjustment. R default: 0.",
+    )
+
     alpha = st.number_input(
         "Significance level (α)",
         min_value=0.001,
@@ -68,6 +86,8 @@ def render_inputs(design):
     return {
         "n_individuals": n_individuals,
         "r2_level1": r2_level1,
+        "p": p,
+        "g1": g1,
         "outcome_type": outcome_type,
         "baseline_prob": baseline_prob,
         "outcome_sd": outcome_sd,
