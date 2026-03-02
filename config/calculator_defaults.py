@@ -263,7 +263,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bcra",
+        "engine": "compute_mdes_bcra3_2_fixed",
     },
 
     "BCRA3_2r": {
@@ -274,7 +274,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bcra",
+        "engine": "compute_mdes_bcra3_2_random",
     },
 
     "BCRA4_2r": {
@@ -285,7 +285,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bcra",
+        "engine": "compute_mdes_bcra4_2",
     },
 
     "BCRA4_3f": {
@@ -296,7 +296,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bcra",
+        "engine": "compute_mdes_bcra4_3_fixed",
     },
 
     "BCRA4_3r": {
@@ -307,7 +307,7 @@ DESIGN_CONFIGS = {
         "cluster_fields": [],
         "rd_fields": [],
         "its_fields": [],
-        "engine": "compute_mdes_bcra",
+        "engine": "compute_mdes_bcra4_3_random",
     },
 
     # ─────────────────────────────────────────────────────────────
@@ -335,30 +335,8 @@ DESIGN_CONFIGS = {
         "engine": "compute_mdes_rd",
     },
 
-    "RDC_2r": {
-        "sample_fields": ["n_units"],
-        "icc_fields": ["icc"],
-        "covariate_fields": ["r2_level1", "r2_level2"],
-        "block_fields": [],
-        "cluster_fields": [],
-        "rd_fields": ["bandwidth", "running_var_sd"],
-        "its_fields": [],
-        "engine": "compute_mdes_rd",
-    },
-
-    "RDC_3r": {
-        "sample_fields": ["n_units"],
-        "icc_fields": ["icc"],
-        "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
-        "block_fields": [],
-        "cluster_fields": [],
-        "rd_fields": ["bandwidth", "running_var_sd"],
-        "its_fields": [],
-        "engine": "compute_mdes_rd",
-    },
-
-    "RD3_2f": {
-        "sample_fields": ["n_units"],
+    "RD3_1f": {
+        "sample_fields": ["n_units", "n_clusters", "cluster_size"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
@@ -368,11 +346,11 @@ DESIGN_CONFIGS = {
         "engine": "compute_mdes_rd",
     },
 
-    "RD3_2r": {
-        "sample_fields": ["n_units"],
+    "RD3_1r": {
+        "sample_fields": ["n_units", "n_clusters", "cluster_size"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
-        "block_fields": ["n_blocks"],
+        "block_fields": [],
         "cluster_fields": [],
         "rd_fields": ["bandwidth", "running_var_sd"],
         "its_fields": [],

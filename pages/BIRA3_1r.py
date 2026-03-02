@@ -124,3 +124,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira3_1r,
     )
+
+render()

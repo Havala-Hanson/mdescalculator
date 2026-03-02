@@ -116,7 +116,7 @@ def compute_mdes_bcra(
         interpretation=interpretation,
     )
 
-def compute_mdes_bcra3_2_fixed(
+def compute_mdes_bcra3_2f(
     n_level3: int,          # K blocks
     n_level2: int,          # J clusters per block
     cluster_size: int,      # n individuals per cluster
@@ -239,7 +239,7 @@ def compute_mdes_bcra3_2_fixed(
         interpretation=interpretation,
     )
 
-def compute_mdes_bcra3_2_random(
+def compute_mdes_bcra3_2r(
     n_level3: int,          # K blocks (random)
     n_level2: int,          # J clusters per block
     cluster_size: int,      # n individuals per cluster

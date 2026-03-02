@@ -20,16 +20,23 @@ class ClassifierResult(NamedTuple):
 # Keyword patterns for assignment-unit detection
 # ─────────────────────────────────────────────────────────────
 
+_KEYWORDS_L4_RANDOMIZED = [
+    r"\blevel[- ]?4\b",
+    r"\bfour[- ]?levels?\b",
+    r"\bfourth[- ]?level\b",
+    r"\bstate[- ]?level\b",
+    r"\bnational[- ]?level\b",
+]
+
 _KEYWORDS_L3_RANDOMIZED = [
     r"\bdistricts?\b",
     r"\bhospitals?\b",
     r"\bcount(?:y|ies)\b",
     r"\borganizations?\b",
-    r"\bsystems?\b",
     r"\bclinics?\b",
     r"\bcenters?\b",
     r"\blevel[- ]?3\b",
-    r"\bthree[- ]?level\b",
+    r"\bthree[- ]?levels?\b",
     r"\bthird[- ]?level\b",
 ]
 
@@ -69,6 +76,31 @@ _KEYWORDS_INDIVIDUAL = [
     r"\brandom assignment of individuals?\b",
 ]
 
+
+# ─────────────────────────────────────────────────────────────
+# Block-effect type detection (fixed vs random)
+# ─────────────────────────────────────────────────────────────
+
+_KEYWORDS_BLOCK_FIXED = [
+    r"\bfixed[- ]?effects?\b",
+    r"\bfixed[- ]?block\b",
+    r"\bblock[- ]?fixed\b",
+    r"\bdummies?\b",
+    r"\bindicator variables?\b",
+    r"\bsite[- ]?fixed\b",
+    r"\bfixed[- ]?site\b",
+]
+
+_KEYWORDS_BLOCK_RANDOM = [
+    r"\brandom[- ]?effects?\b",
+    r"\brandom[- ]?block\b",
+    r"\bblock[- ]?random\b",
+    r"\brandom intercept\b",
+    r"\bvariance component\b",
+    r"\bmixed[- ]?model\b",
+    r"\bmlm\b",
+    r"\bhierarchical linear\b",
+]
 
 # ─────────────────────────────────────────────────────────────
 # Blocking detection
@@ -370,6 +402,7 @@ def _select_design_from_family(
     is_blocked: bool,
     levels_hint: int | None,
     assignment_unit_hint: str | None,
+    block_effect_hint: str | None = None,
 ) -> str:
     """Pick a specific design code within a family using simple heuristics."""
     candidates = [d for d in DESIGNS if d.design_family == family]
@@ -391,6 +424,12 @@ def _select_design_from_family(
         if unit_filtered:
             candidates = unit_filtered
 
+    # Block effect type (fixed vs random)
+    if block_effect_hint is not None and is_blocked:
+        effect_filtered = [d for d in candidates if d.block_effect == block_effect_hint]
+        if effect_filtered:
+            candidates = effect_filtered
+
     # Fallback: first candidate
     return candidates[0].code
 
@@ -407,10 +446,21 @@ def classify_study(description: str) -> ClassifierResult:
     def has_match(patterns: List[str]) -> bool:
         return any(re.search(pat, text) for pat in patterns)
 
+    hits_l4 = count_hits(_KEYWORDS_L4_RANDOMIZED)
     hits_l3 = count_hits(_KEYWORDS_L3_RANDOMIZED)
     hits_l2 = count_hits(_KEYWORDS_L2_RANDOMIZED)
     hits_blocked = count_hits(_KEYWORDS_BLOCKED)
     hits_individual = count_hits(_KEYWORDS_INDIVIDUAL)
+
+    # Block effect type hints
+    hits_block_fixed = count_hits(_KEYWORDS_BLOCK_FIXED)
+    hits_block_random = count_hits(_KEYWORDS_BLOCK_RANDOM)
+    if hits_block_fixed > hits_block_random:
+        block_effect_hint: str | None = "fixed"
+    elif hits_block_random > 0:
+        block_effect_hint = "random"
+    else:
+        block_effect_hint = None
 
     # Explicit assignment-unit patterns
     explicit_l3 = has_match(_PATTERNS_EXPLICIT_L3)
@@ -444,10 +494,19 @@ def classify_study(description: str) -> ClassifierResult:
             scores_family["BIRA"] += hits_individual + hits_blocked
 
     # Cluster randomized
-    if (hits_l2 > 0 or hits_l3 > 0) and not has_rd and not has_its:
-        scores_family["CRA"] += hits_l2 + hits_l3
+    cluster_hits = hits_l2 + hits_l3 + hits_l4
+    if cluster_hits > 0 and not has_rd and not has_its:
+        scores_family["CRA"] += cluster_hits
         if hits_blocked > 0:
-            scores_family["BCRA"] += hits_l2 + hits_l3 + hits_blocked
+            scores_family["BCRA"] += cluster_hits + hits_blocked
+
+    # Explicit individual assignment strongly overrides cluster-unit inferences:
+    # cluster keywords (schools, sites) often appear as context even in BIRA/IRA designs.
+    if explicit_ind and not explicit_l2 and not explicit_l3 and not has_rd and not has_its:
+        scores_family["IRA"] *= 3.0
+        scores_family["BIRA"] *= 3.0
+        scores_family["CRA"] *= 0.25
+        scores_family["BCRA"] *= 0.25
 
     # Normalize
     total_family = sum(scores_family.values()) or 1.0
@@ -460,7 +519,13 @@ def classify_study(description: str) -> ClassifierResult:
     is_blocked_flag = hits_blocked > 0
 
     levels_hint = None
-    if hits_l3 > 0 and hits_l2 > 0:
+    if hits_l4 > 0 and (hits_l3 > 0 or hits_l2 > 0):
+        levels_hint = 4
+    elif hits_l3 > 0 and hits_l2 > 0:
+        levels_hint = 3
+    elif hits_l4 > 0:
+        levels_hint = 4
+    elif hits_l3 > 0:
         levels_hint = 3
     elif hits_l2 > 0:
         levels_hint = 2
@@ -468,8 +533,15 @@ def classify_study(description: str) -> ClassifierResult:
     assignment_unit_hint = None
     if hits_individual > 0 and not has_rd:
         assignment_unit_hint = "individual"
-    elif hits_l2 > 0 or hits_l3 > 0:
+    elif hits_l2 > 0 or hits_l3 > 0 or hits_l4 > 0:
         assignment_unit_hint = "cluster"
+
+    # For RD/ITS: if no level context, default to the simplest (2-level) design
+    if best_family in ("RD", "ITS") and levels_hint is None:
+        levels_hint = 2
+        # Also default RD to blocked (most common: site-level fixed/random effects)
+        if best_family == "RD":
+            is_blocked_flag = True
 
     # Pick specific design from family
     best_design = _select_design_from_family(
@@ -477,6 +549,7 @@ def classify_study(description: str) -> ClassifierResult:
         is_blocked=is_blocked_flag,
         levels_hint=levels_hint,
         assignment_unit_hint=assignment_unit_hint,
+        block_effect_hint=block_effect_hint,
     )
 
     confidence = 0.0
@@ -502,7 +575,7 @@ def classify_study(description: str) -> ClassifierResult:
     elif has_match(_PATTERNS_RAND_IMPLIED):
         confidence += _CONF_RAND_IMPLIED
 
-    if hits_individual > hits_l2 and hits_individual > hits_l3 and best_design != "INDIV_RCT":
+    if hits_individual > hits_l2 and hits_individual > hits_l3 and best_design != "IRA":
         confidence *= 0.3
 
     confidence = min(1.0, confidence)
@@ -521,11 +594,28 @@ def classify_study(description: str) -> ClassifierResult:
     )
 
 
+    # Build ranked top_designs list across all families
+    top_designs: List[Tuple[str, float]] = []
+    for family, score in sorted(scores_family.items(), key=lambda x: x[1], reverse=True):
+        if score <= 0:
+            continue
+        design_code = _select_design_from_family(
+            family,
+            is_blocked=is_blocked_flag,
+            levels_hint=levels_hint,
+            assignment_unit_hint=assignment_unit_hint,
+            block_effect_hint=block_effect_hint,
+        )
+        top_designs.append((design_code, round(score, 3)))
+
+    if not top_designs:
+        top_designs = [(best_design, round(best_family_score, 3))]
+
     return ClassifierResult(
         design=best_design,
-        confidence=confidence,
-        top_designs=[(best_design, best_family_score)],
+        confidence=round(confidence, 3),
+        top_designs=top_designs,
         rationale=rationale,
-        family_scores=scores_family, 
+        family_scores={k: round(v, 3) for k, v in scores_family.items()},
     )
 

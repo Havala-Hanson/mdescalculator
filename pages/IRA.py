@@ -12,7 +12,7 @@ def render_inputs(design):
     n_individuals = st.number_input(
         "Total number of individuals (N)",
         min_value=4,
-        value=design.defaults.get("n_individuals", 200),
+        value=200,
         step=10,
     )
 
@@ -102,3 +102,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_ira,
     )
+
+render()

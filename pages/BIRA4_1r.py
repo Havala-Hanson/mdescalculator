@@ -16,28 +16,28 @@ def render_inputs(design):
     n_blocks = st.number_input(
         "Number of level-4 blocks (L)",
         min_value=2,
-        value=design.defaults.get("n_blocks", 5),
+        value=5,
         step=1,
     )
 
     n_sites_per_block = st.number_input(
         "Number of level-3 sites per block (K)",
         min_value=1,
-        value=design.defaults.get("n_sites_per_block", 4),
+        value=4,
         step=1,
     )
 
     n_clusters_per_site = st.number_input(
         "Number of level-2 clusters per site (J)",
         min_value=1,
-        value=design.defaults.get("n_clusters_per_site", 5),
+        value=5,
         step=1,
     )
 
     cluster_size = st.number_input(
         "Average cluster size (n, individuals per cluster)",
         min_value=2,
-        value=design.defaults.get("cluster_size", 20),
+        value=20,
         step=1,
     )
 
@@ -215,3 +215,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira4_1r,
     )
+
+render()

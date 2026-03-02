@@ -15,14 +15,14 @@ def render_inputs(design):
     n_timepoints_pre = st.number_input(
         "Number of pre-intervention time points",
         min_value=2,
-        value=design.defaults.get("n_timepoints_pre", 8),
+        value=8,
         step=1,
     )
 
     n_timepoints_post = st.number_input(
         "Number of post-intervention time points",
         min_value=2,
-        value=design.defaults.get("n_timepoints_post", 8),
+        value=8,
         step=1,
     )
 
@@ -30,7 +30,7 @@ def render_inputs(design):
         "Autocorrelation (ρ)",
         min_value=0.0,
         max_value=0.99,
-        value=design.defaults.get("autocorrelation", 0.30),
+        value=0.30,
         step=0.05,
     )
 
@@ -99,3 +99,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_its,
     )
+
+render()

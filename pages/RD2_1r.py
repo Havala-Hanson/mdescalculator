@@ -14,14 +14,14 @@ def render_inputs(design):
     # -----------------------------
     cutoff = st.number_input(
         "Cutoff value",
-        value=design.defaults.get("cutoff", 0.0),
+        value=0.0,
         step=0.1,
     )
 
     bandwidth = st.number_input(
         "Bandwidth (h)",
         min_value=0.01,
-        value=design.defaults.get("bandwidth", 1.0),
+        value=1.0,
         step=0.1,
     )
 
@@ -133,3 +133,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_rd,
     )
+
+render()

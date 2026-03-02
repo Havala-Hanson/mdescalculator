@@ -4,7 +4,7 @@ from config.designs import DESIGNS, DESIGN_BY_CODE, PAGE_BY_CODE
 st.title("Guided Study Design Questionnaire")
 st.write(
     "Answer a few short questions and we’ll narrow down the study design that "
-    "matches your description. If you're unsure about a question, use the (i) "
+    "matches your description. If you're unsure about a question, use the (?) "
     "icons or expanders for examples."
 )
 

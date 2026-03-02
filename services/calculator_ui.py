@@ -1,6 +1,8 @@
 import streamlit as st
 import math
 
+from services.interpretation import interpret_mdes
+
 # ---------------------------------------------------------------------
 # Read initial state
 # ---------------------------------------------------------------------
@@ -221,7 +223,7 @@ def render_outcome_type_inputs(design, state):
 # Results rendering
 # ---------------------------------------------------------------------
 
-def render_results(result):
+def render_results(result, state):
     if result is None:
         return
 
@@ -240,8 +242,15 @@ def render_results(result):
     if result.mdes_raw is not None:
         st.metric("MDES (raw units)", f"{result.mdes_raw:.4f}")
 
+    interp = interpret_mdes(
+        mdes=result.mdes,
+        outcome_type=state.get("outcome_type", "continuous"),
+        baseline_prob=state.get("baseline_prob"),
+        alpha=state.get("alpha", 0.05),
+        power=state.get("power", 0.80),
+    )
     st.markdown("### Interpretation")
-    st.write(result.interpretation)
+    st.write(interp["narrative"])
     
 # ---------------------------------------------------------------------
 # Top-level calculator assembly
@@ -291,7 +300,7 @@ def render_calculator_page(design):
     if st.button("Compute MDES"):
         inputs = collect_engine_inputs(design, state)
         result = run_engine(design, inputs)
-        render_results(result)
+        render_results(result, state)
         render_download_button(result, state, design.calculator_header["title"], design)
 
 # ---------------------------------------------------------------------
@@ -354,16 +363,44 @@ def collect_engine_inputs(design, state):
 # ---------------------------------------------------------------------
 from mdes_engines.ira import compute_mdes_ira
 from mdes_engines.bira import compute_mdes_bira
+from mdes_engines.bira import compute_mdes_bira2_1c
+from mdes_engines.bira import compute_mdes_bira2_1r
+from mdes_engines.bira import compute_mdes_bira2_1f
+from mdes_engines.bira import compute_mdes_bira3_1r
+from mdes_engines.bira import compute_mdes_bira4_1r
+
 from mdes_engines.cra import compute_mdes_cra
+from mdes_engines.mdes_four_level import compute_mdes_cra4_4
+from mdes_engines.mdes_three_level import compute_mdes_cra3_3
+
 from mdes_engines.bcra import compute_mdes_bcra
+from mdes_engines.bcra import compute_mdes_bcra3_2r
+from mdes_engines.bcra import compute_mdes_bcra3_2f
+from mdes_engines.mdes_four_level import compute_mdes_bcra4_3_random
+from mdes_engines.mdes_four_level import compute_mdes_bcra4_3_fixed
+from mdes_engines.mdes_four_level import compute_mdes_bcra4_2
+
 from mdes_engines.rd import compute_mdes_rd
+
 from mdes_engines.its import compute_mdes_its
 
 ENGINE_MAP = {
     "compute_mdes_ira": compute_mdes_ira,
     "compute_mdes_bira": compute_mdes_bira,
+    "compute_mdes_bira2_1c": compute_mdes_bira2_1c,
+    "compute_mdes_bira2_1r": compute_mdes_bira2_1r,
+    "compute_mdes_bira2_1f": compute_mdes_bira2_1f,
+    "compute_mdes_bira3_1r": compute_mdes_bira3_1r,
+    "compute_mdes_bira4_1r": compute_mdes_bira4_1r,
     "compute_mdes_cra": compute_mdes_cra,
+    "compute_mdes_cra3_3": compute_mdes_cra3_3,
+    "compute_mdes_cra4_4": compute_mdes_cra4_4,
     "compute_mdes_bcra": compute_mdes_bcra,
+    "compute_mdes_bcra3_2r": compute_mdes_bcra3_2r,
+    "compute_mdes_bcra3_2f": compute_mdes_bcra3_2f,
+    "compute_mdes_bcra4_3_random": compute_mdes_bcra4_3_random,
+    "compute_mdes_bcra4_3_fixed": compute_mdes_bcra4_3_fixed,
+    "compute_mdes_bcra4_2": compute_mdes_bcra4_2,
     "compute_mdes_rd": compute_mdes_rd,
     "compute_mdes_its": compute_mdes_its,
 
@@ -452,7 +489,14 @@ def render_download_button(result, state, design_title, design):
             f"MDES (raw units):              {result.mdes_raw:.4f}"
         )
 
-    summary_lines += ["", result.interpretation]
+    interp = interpret_mdes(
+        mdes=result.mdes,
+        outcome_type=state.get("outcome_type", "continuous"),
+        baseline_prob=state.get("baseline_prob"),
+        alpha=state.get("alpha", 0.05),
+        power=state.get("power", 0.80),
+    )
+    summary_lines += ["", "Interpretation", "-" * 45, interp["narrative"]]
 
     summary_text = "\n".join(summary_lines)
 

@@ -15,14 +15,14 @@ def render_inputs(design):
     n_blocks = st.number_input(
         "Number of blocks (J)",
         min_value=2,
-        value=design.defaults.get("n_blocks", 20),
+        value=20,
         step=1,
     )
 
     n_individuals = st.number_input(
         "Total number of individuals (N)",
         min_value=4,
-        value=design.defaults.get("n_individuals", 200),
+        value=200,
         step=10,
     )
 
@@ -156,3 +156,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira2_1r,
     )
+
+render()

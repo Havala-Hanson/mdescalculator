@@ -91,7 +91,6 @@ def render_calculator_page(
         design=design,
         inputs=inputs,
         result=result,
-        interpretation=interp,
     )
 
     st.download_button(

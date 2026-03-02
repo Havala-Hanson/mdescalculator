@@ -2,7 +2,7 @@
 
 import streamlit as st
 from config.designs import DESIGN_BY_CODE
-from mdes_engines.mdes_three_level import compute_mdes_bcra3_2
+from mdes_engines.bcra import compute_mdes_bcra3_2f
 from services.calculator_template import render_calculator_page
 
 
@@ -17,40 +17,33 @@ def render_inputs(design):
     n_level3 = st.number_input(
         "Number of level-3 blocks (K)",
         min_value=1,
-        value=design.defaults.get("n_level3", 20),
+        value=20,
         step=1,
     )
 
     n_level2 = st.number_input(
         "Number of level-2 units per block (J)",
         min_value=3,
-        value=design.defaults.get("n_level2", 5),
+        value=5,
         step=1,
     )
 
     cluster_size = st.number_input(
         "Average number of level-1 units per level-2 unit (n)",
         min_value=1,
-        value=design.defaults.get("cluster_size", 30),
+        value=30,
         step=1,
     )
 
     # -----------------------------
     # ICCs
     # -----------------------------
-    icc3 = st.number_input(
-        "ICC (level 3)",
-        min_value=0.0,
-        max_value=0.99,
-        value=design.defaults.get("icc3", 0.05),
-        step=0.01,
-    )
 
     icc2 = st.number_input(
         "ICC (level 2)",
         min_value=0.0,
         max_value=0.99,
-        value=design.defaults.get("icc2", 0.10),
+        value=0.10,
         step=0.01,
     )
 
@@ -127,7 +120,6 @@ def render_inputs(design):
         "n_level3": n_level3,
         "n_level2": n_level2,
         "cluster_size": cluster_size,
-        "icc3": icc3,
         "icc2": icc2,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
@@ -143,5 +135,7 @@ def render():
     render_calculator_page(
         design=design,
         input_render_fn=render_inputs,
-        engine_fn=compute_mdes_bcra3_2,
+        engine_fn=compute_mdes_bcra3_2f,
     )
+
+render()

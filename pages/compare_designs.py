@@ -175,3 +175,5 @@ def render_comparison():
         "description contained partial cues for both designs or lacked details that would clearly "
         "distinguish between them."
     )
+
+    render_comparison()

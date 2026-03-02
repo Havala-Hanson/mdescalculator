@@ -32,7 +32,7 @@ def percentile_shift(d):
 # ------------------------------------------------------------
 # Main export builder
 # ------------------------------------------------------------
-def build_mdes_report(design, inputs, results):
+def build_mdes_report(design, inputs, result):
     """
     Build a clean, reproducible text summary of MDES inputs, outputs,
     interpretation, and calculation narrative.
@@ -61,18 +61,18 @@ def build_mdes_report(design, inputs, results):
     # Results
     # ------------------------------------------------------------
     lines.append("Results:")
-    lines.append(f"- MDES (standardized): {results.mdes}")
-    lines.append(f"- Standard error: {results.se}")
-    lines.append(f"- Degrees of freedom: {results.df}")
-    lines.append(f"- Design effect: {results.design_effect}")
-    lines.append(f"- Effective sample size: {results.effective_n}")
-    lines.append(f"- Total sample size: {results.total_n}")
+    lines.append(f"- MDES (standardized): {result.mdes}")
+    lines.append(f"- Standard error: {result.se}")
+    lines.append(f"- Degrees of freedom: {result.df}")
+    lines.append(f"- Design effect: {result.design_effect}")
+    lines.append(f"- Effective sample size: {result.effective_n}")
+    lines.append(f"- Total sample size: {result.total_n}")
 
-    if results.mdes_raw is not None:
-        lines.append(f"- MDES (raw units): {results.mdes_raw}")
+    if result.mdes_raw is not None:
+        lines.append(f"- MDES (raw units): {result.mdes_raw}")
 
-    if results.mdes_pct_points is not None:
-        lines.append(f"- MDES (percentage points): {results.mdes_pct_points}")
+    if result.mdes_pct_points is not None:
+        lines.append(f"- MDES (percentage points): {result.mdes_pct_points}")
 
     lines.append("")
 
@@ -83,13 +83,13 @@ def build_mdes_report(design, inputs, results):
 
     if not is_binary:
         # Continuous outcome interpretation
-        effect_label = classify_effect_size_kraft(results.mdes)
-        new_pct, shift = percentile_shift(results.mdes)
+        effect_label = classify_effect_size_kraft(result.mdes)
+        new_pct, shift = percentile_shift(result.mdes)
 
         lines.append("Interpretation:")
         lines.append(
             f"Under the assumptions specified, this study is powered to detect an "
-            f"effect size of {results.mdes:.3f} standard deviations. Effects of this "
+            f"effect size of {result.mdes:.3f} standard deviations. Effects of this "
             f"magnitude are considered {effect_label} in education research, based on "
             f"Kraft (2019). An effect of this size would move an average individual "
             f"from the 50th percentile in the control group to approximately the "
@@ -103,11 +103,11 @@ def build_mdes_report(design, inputs, results):
     else:
         # Binary outcome interpretation
         p = inputs.get("baseline_prob")
-        mdes_pp = results.mdes_pct_points
+        mdes_pp = result.mdes_pct_points
 
         if mdes_pp is None:
             # fallback if calculator didn't compute percentage points
-            mdes_pp = results.mdes * (p * (1 - p)) ** 0.5 * 100
+            mdes_pp = result.mdes * (p * (1 - p)) ** 0.5 * 100
 
         relative_change = (mdes_pp / 100) / p * 100
 
@@ -127,6 +127,7 @@ def build_mdes_report(design, inputs, results):
     # Calculation narrative
     # ------------------------------------------------------------
     lines.append("How this MDES was calculated:")
+    
     lines.append(
         f"The MDES was computed using the {design.title} design ({design.code}), "
         f"which assumes {design.assignment_unit}-level assignment and a "

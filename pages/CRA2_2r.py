@@ -17,14 +17,14 @@ def render_inputs(design):
     n_clusters = st.number_input(
         "Number of clusters (J)",
         min_value=3,
-        value=design.defaults.get("n_clusters", 20),
+        value=20,
         step=1,
     )
 
     cluster_size = st.number_input(
         "Average cluster size (n)",
         min_value=1,
-        value=design.defaults.get("cluster_size", 30),
+        value=30,
         step=1,
     )
 
@@ -35,7 +35,7 @@ def render_inputs(design):
         "Intraclass correlation (ICC)",
         min_value=0.0,
         max_value=0.99,
-        value=design.defaults.get("icc", 0.10),
+        value=0.10,
         step=0.01,
     )
 
@@ -151,3 +151,5 @@ def render():
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_cra,
     )
+
+render()
