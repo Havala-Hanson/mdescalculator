@@ -442,67 +442,54 @@ def render_download_button(result, state, design_title, design):
         + ["alpha", "power"]
     )
 
-    summary_lines = [
-        f"MDES Calculator – {design_title}",
-        "=" * (20 + len(design_title)),
-        "",
-        "Inputs",
-        "-" * 45,
-    ]
-
-    # Add inputs in a clean, design-specific order
+    # Collect inputs in design-specific order
+    inputs_dict = {}
     for field in ordered_fields:
         if field in state:
-            summary_lines.append(f"{field}: {state[field]}")
-
-    # Outcome-type-specific
-    summary_lines.append(f"outcome_type: {state.get('outcome_type')}")
-
-    if state.get("outcome_type") == "binary":
-        summary_lines.append(f"baseline_prob: {state.get('baseline_prob')}")
-        summary_lines.append(f"outcome_sd: {state.get('outcome_sd')}")
+            inputs_dict[field] = state[field]
+    inputs_dict['outcome_type'] = state.get('outcome_type')
+    if state.get('outcome_type') == 'binary':
+        inputs_dict['baseline_prob'] = state.get('baseline_prob')
+        inputs_dict['outcome_sd']    = state.get('outcome_sd')
     else:
-        sd = state.get("outcome_sd_input")
+        sd = state.get('outcome_sd_input')
         if sd is not None:
-            summary_lines.append(f"outcome_sd_input: {sd}")
-        summary_lines.append(f"outcome_sd: {state.get('outcome_sd')}")
+            inputs_dict['outcome_sd_input'] = sd
+        inputs_dict['outcome_sd'] = state.get('outcome_sd')
 
-    summary_lines += [
-        "",
-        "Results",
-        "-" * 45,
-        f"MDES (standardized):           {result.mdes:.4f}",
-        f"Standard error (sigma_delta):  {result.se:.4f}",
-        f"Degrees of freedom:            {result.df}",
-        f"Design effect (DEFF):          {result.design_effect:.3f}",
-        f"Effective sample size:         {result.effective_n:,.1f}",
-        f"Total sample size:             {result.total_n}",
-    ]
-
-    if result.mdes_pct_points is not None:
-        summary_lines.append(
-            f"MDES (percentage points):      {result.mdes_pct_points:.2f} pp"
-        )
-
-    if result.mdes_raw is not None:
-        summary_lines.append(
-            f"MDES (raw units):              {result.mdes_raw:.4f}"
-        )
-
+    # Build narrative strings via interpret_mdes
     interp = interpret_mdes(
         mdes=result.mdes,
-        outcome_type=state.get("outcome_type", "continuous"),
-        baseline_prob=state.get("baseline_prob"),
-        alpha=state.get("alpha", 0.05),
-        power=state.get("power", 0.80),
+        outcome_type=state.get('outcome_type', 'continuous'),
+        baseline_prob=state.get('baseline_prob'),
+        alpha=state.get('alpha', 0.05),
+        power=state.get('power', 0.80),
     )
-    summary_lines += ["", "Interpretation", "-" * 45, interp["narrative"]]
+    narrative      = interp.get('narrative', 'Not provided.')
+    calc_narrative = (
+        f"The MDES was computed using the {design_title} design, "
+        f"which applies a two-tailed test with "
+        f"\u03b1={state.get('alpha', 0.05)} and "
+        f"power={state.get('power', 0.80)}. Variance components and covariate "
+        f"adjustments were incorporated according to the design\u2019s statistical "
+        f"model. For continuous outcomes, effect-size interpretation follows "
+        f"Kraft (2020)."
+    )
 
-    summary_text = "\n".join(summary_lines)
+    from services.export import generate_docx
+    from datetime import datetime
+    docx_buffer = generate_docx(
+        title=design_title,
+        inputs=inputs_dict,
+        results=result,
+        narrative=narrative,
+        calc_narrative=calc_narrative,
+        metadata={},
+    )
 
     st.download_button(
-        label="Download summary (TXT)",
-        data=summary_text,
-        file_name="mdes_results.txt",
-        mime="text/plain",
+        label='\U0001F4C4 Download Results (.docx)',
+        data=docx_buffer,
+        file_name=f"mdes_results_{datetime.now().strftime('%Y%m%d%H%M')}.docx",
+        mime='application/vnd.openxmlformats-officedocument.wordprocessingml.document',
     )

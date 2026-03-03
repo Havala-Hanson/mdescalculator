@@ -8,12 +8,12 @@ st.set_page_config(page_title="MDES Calculator", layout="wide")
 # Family colors (soft pastel backgrounds)
 # ------------------------------------------------------------
 FAMILY_COLORS = {
-    "IRA": "#e6f2ff",
-    "BIRA": "#f0e6ff",
-    "CRA": "#e6ffe6",
-    "BCRA": "#e6fffa",
-    "RD": "#fff2e6",
-    "ITS": "#ffe6f2",
+    "IRA": "#2463a7",
+    "BIRA": "#5b1db9",
+    "CRA": "#63b863",
+    "BCRA": "#156656",
+    "RD": "#c97d36",
+    "ITS": "#ca5d92",
 }
 
 # ------------------------------------------------------------

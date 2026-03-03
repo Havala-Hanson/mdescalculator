@@ -1,6 +1,7 @@
 import streamlit as st
+from datetime import datetime
 from services.interpretation import interpret_mdes
-from services.export import build_mdes_report
+from services.export import generate_docx
 
 
 def render_calculator_page(
@@ -87,15 +88,27 @@ def render_calculator_page(
     # -----------------------------
     st.subheader("Download report")
 
-    report_bytes = build_mdes_report(
-        design=design,
+    calc_narrative = (
+        f"The MDES was computed using the {design.title} design, "
+        f"which applies a two-tailed test with "
+        f"\u03b1={inputs.get('alpha', 0.05)} and "
+        f"power={inputs.get('power', 0.80)}. Variance components and covariate "
+        f"adjustments were incorporated according to the design\u2019s statistical "
+        f"model. For continuous outcomes, effect-size interpretation follows "
+        f"Kraft (2020)."
+    )
+
+    report_bytes = generate_docx(
+        title=design.title,
         inputs=inputs,
-        result=result,
+        results=result,
+        narrative=interp["narrative"],
+        calc_narrative=calc_narrative,
     )
 
     st.download_button(
-        label="Download MDES report",
+        label="\U0001F4C4 Download Results (.docx)",
         data=report_bytes,
-        file_name=f"{design.code}_mdes_report.html",
-        mime="text/html",
+        file_name=f"{design.code}_mdes_report_{datetime.now().strftime('%Y%m%d%H%M')}.docx",
+        mime="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
     )

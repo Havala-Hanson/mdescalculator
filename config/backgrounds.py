@@ -5,60 +5,172 @@ FAMILY_BACKGROUNDS = {
 **MDES formula** (Bloom et al., 2007):
 
 \[
-\text{MDES} = M_{\alpha,\nu} \cdot \sqrt{\frac{1 - R^2}{P(1-P)N}}
+	ext{MDES} = M_{\alpha,\nu} \cdot \sqrt{\frac{1 - R^2}{P(1-P)N}}
 \]
 
 where \(N\) is total sample size and \(P\) is the treatment proportion.
 """,
+    "BCRA3_2f": r"""
+**Model:** [Placeholder for BCRA3_2f model]
 
-    "CRA": r"""
-**Model:** \(Y_{ij} = \beta_0 + \delta T_j + u_j + e_{ij}\)
-
-**MDES formula** (Bloom et al., 2007; Dong & Maynard, 2013):
+**MDES formula:**
 
 \[
-\text{MDES} = M_{\alpha,\nu} \cdot \sqrt{
-    \frac{\rho(1 - R^2_2)}{P(1-P)J}
-    + \frac{(1-\rho)(1 - R^2_1)}{P(1-P)Jn}
-}
+	ext{[Placeholder for BCRA3_2f formula]}
 \]
-
-where \(\rho\) is the ICC, \(J\) clusters, \(n\) cluster size.
 """,
+    "BCRA3_2r": r"""
+**Model:** [Placeholder for BCRA3_2r model]
 
-    "BCRA": r"""
-**Model:** \(Y_{ijb} = \beta_0 + \delta T_{jb} + \gamma_b + u_{jb} + e_{ijb}\)
-
-Blocked CRTs adjust for block‑level differences.
-
-**MDES formula** (Dong & Maynard, 2013):
+**MDES formula:**
 
 \[
-\text{MDES} = M_{\alpha,\nu} \cdot \sqrt{
-    \frac{\rho(1 - R^2_2)}{P(1-P)J}
-    + \frac{(1-\rho)(1 - R^2_1)}{P(1-P)Jn}
-    - \frac{\text{BlockVar}}{P(1-P)J}
-}
+	ext{[Placeholder for BCRA3_2r formula]}
 \]
-
-where BlockVar depends on fixed vs random block effects.
 """,
+    "BCRA4_2r": r"""
+**Model:** [Placeholder for BCRA4_2r model]
 
-    "BIRA": r"""
-Blocked individual random assignment adjusts for block‑level differences.
-
-**Model:** \(Y_{ib} = \beta_0 + \delta T_{ib} + \gamma_b + e_{ib}\)
-
-**MDES formula**:
+**MDES formula:**
 
 \[
-\text{MDES} = M_{\alpha,\nu} \cdot \sqrt{
-    \frac{1 - R^2}{P(1-P)N}
-    - \frac{\text{BlockVar}}{P(1-P)B}
-}
+	ext{[Placeholder for BCRA4_2r formula]}
 \]
+""",
+    "BCRA4_3f": r"""
+**Model:** [Placeholder for BCRA4_3f model]
 
-where \(B\) is number of blocks.
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BCRA4_3f formula]}
+\]
+""",
+    "BCRA4_3r": r"""
+**Model:** [Placeholder for BCRA4_3r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BCRA4_3r formula]}
+\]
+""",
+    "BIRA2_1c": r"""
+**Model:** [Placeholder for BIRA2_1c model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BIRA2_1c formula]}
+\]
+""",
+    "BIRA2_1f": r"""
+**Model:** [Placeholder for BIRA2_1f model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BIRA2_1f formula]}
+\]
+""",
+    "BIRA2_1r": r"""
+**Model:** [Placeholder for BIRA2_1r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BIRA2_1r formula]}
+\]
+""",
+    "BIRA3_1r": r"""
+**Model:** [Placeholder for BIRA3_1r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BIRA3_1r formula]}
+\]
+""",
+    "BIRA4_1r": r"""
+**Model:** [Placeholder for BIRA4_1r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for BIRA4_1r formula]}
+\]
+""",
+    "CRA2_2r": r"""
+**Model:** [Placeholder for CRA2_2r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for CRA2_2r formula]}
+\]
+""",
+    "CRA3_3r": r"""
+**Model:** [Placeholder for CRA3_3r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for CRA3_3r formula]}
+\]
+""",
+    "CRA4_4r": r"""
+**Model:** [Placeholder for CRA4_4r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for CRA4_4r formula]}
+\]
+""",
+    "ITS": r"""
+**Model:** [Placeholder for ITS model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for ITS formula]}
+\]
+""",
+    "RD2_1f": r"""
+**Model:** [Placeholder for RD2_1f model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for RD2_1f formula]}
+\]
+""",
+    "RD2_1r": r"""
+**Model:** [Placeholder for RD2_1r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for RD2_1r formula]}
+\]
+""",
+    "RD3_1f": r"""
+**Model:** [Placeholder for RD3_1f model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for RD3_1f formula]}
+\]
+""",
+    "RD3_1r": r"""
+**Model:** [Placeholder for RD3_1r model]
+
+**MDES formula:**
+
+\[
+	ext{[Placeholder for RD3_1r formula]}
+\]
 """,
 }
 

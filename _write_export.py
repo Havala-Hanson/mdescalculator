@@ -1,9 +1,9 @@
+content = """\
 # services/export.py
 
 import io
 import math
 from datetime import datetime
-from typing import Optional
 
 from docx import Document
 from docx.shared import Pt, RGBColor, Inches
@@ -28,10 +28,10 @@ def classify_effect_size_kraft(d):
 # Percentile-shift interpretation for continuous outcomes
 # ------------------------------------------------------------
 def percentile_shift(d):
-    """
+    \"\"\"
     Convert an effect size into a percentile shift using the normal CDF.
     Returns (new_percentile, shift).
-    """
+    \"\"\"
     phi = 0.5 * (1 + math.erf(d / math.sqrt(2)))
     shift = (phi - 0.5) * 100
     return phi * 100, shift
@@ -40,18 +40,18 @@ def percentile_shift(d):
 # ------------------------------------------------------------
 # Styling constants
 # ------------------------------------------------------------
-_NAVY  = RGBColor(0x1F, 0x38, 0x64)   # #1F3864 – document title
-_BLUE  = RGBColor(0x2E, 0x75, 0xB6)   # #2E75B6 – section headers / table header fill
-_WHITE = RGBColor(0xFF, 0xFF, 0xFF)   # #FFFFFF – table header text
-_IN_BG = RGBColor(0xD9, 0xE1, 0xF2)   # #D9E1F2 – inputs table header fill
-_GRAY  = RGBColor(0x59, 0x59, 0x59)   # #595959 – footer / captions
+_NAVY  = RGBColor(0x1F, 0x38, 0x64)   # #1F3864 - document title
+_BLUE  = RGBColor(0x2E, 0x75, 0xB6)   # #2E75B6 - section headers / table header fill
+_WHITE = RGBColor(0xFF, 0xFF, 0xFF)   # #FFFFFF - table header text
+_IN_BG = RGBColor(0xD9, 0xE1, 0xF2)   # #D9E1F2 - inputs table header fill
+_GRAY  = RGBColor(0x59, 0x59, 0x59)   # #595959 - footer / captions
 
 
 # ------------------------------------------------------------
 # Styling helpers
 # ------------------------------------------------------------
 def _set_cell_bg(cell, rgb: RGBColor):
-    """Fill a table cell with a solid background colour."""
+    \"\"\"Fill a table cell with a solid background colour.\"\"\"
     tc   = cell._tc
     tcPr = tc.get_or_add_tcPr()
     shd  = OxmlElement('w:shd')
@@ -63,7 +63,7 @@ def _set_cell_bg(cell, rgb: RGBColor):
 
 
 def _style_run(run, size_pt, bold=False, italic=False,
-               color: Optional[RGBColor] = None, font_name='Calibri'):
+               color: RGBColor = None, font_name='Calibri'):
     run.font.name   = font_name
     run.font.size   = Pt(size_pt)
     run.font.bold   = bold
@@ -73,7 +73,7 @@ def _style_run(run, size_pt, bold=False, italic=False,
 
 
 def _add_section_heading(doc, text):
-    """Bold 14pt Calibri in #2E75B6, with spacing."""
+    \"\"\"Bold 14pt Calibri in #2E75B6, with spacing.\"\"\"
     p = doc.add_paragraph()
     p.paragraph_format.space_before = Pt(12)
     p.paragraph_format.space_after  = Pt(4)
@@ -83,7 +83,7 @@ def _add_section_heading(doc, text):
 
 
 def _add_body_para(doc, text):
-    """11pt Calibri, justified, 1.15 line spacing, 6pt after."""
+    \"\"\"11pt Calibri, justified, 1.15 line spacing, 6pt after.\"\"\"
     p   = doc.add_paragraph(text)
     fmt = p.paragraph_format
     fmt.alignment    = WD_ALIGN_PARAGRAPH.JUSTIFY
@@ -95,7 +95,7 @@ def _add_body_para(doc, text):
 
 
 def _add_horizontal_rule(doc):
-    """Thin bottom-border paragraph used as a visual divider."""
+    \"\"\"Thin bottom-border paragraph used as a visual divider.\"\"\"
     p    = doc.add_paragraph()
     pPr  = p._p.get_or_add_pPr()
     pBdr = OxmlElement('w:pBdr')
@@ -110,7 +110,7 @@ def _add_horizontal_rule(doc):
 
 
 def _remove_outer_borders(table):
-    """Remove outer four borders of a table, keep inner gridlines."""
+    \"\"\"Remove outer four borders of a table, keep inner gridlines.\"\"\"
     tbl   = table._tbl
     tblPr = tbl.find(qn('w:tblPr'))
     if tblPr is None:
@@ -133,7 +133,7 @@ def _remove_outer_borders(table):
 def _make_two_col_table(doc, rows_data,
                         header_labels=('Parameter', 'Selected Value'),
                         header_bg=None):
-    """
+    \"\"\"
     Build a styled 2-column table with a coloured header row.
 
     Parameters
@@ -141,7 +141,7 @@ def _make_two_col_table(doc, rows_data,
     rows_data     : list of (label, value) tuples
     header_labels : column header strings
     header_bg     : RGBColor for header fill; defaults to _BLUE
-    """
+    \"\"\"
     bg    = header_bg if header_bg is not None else _BLUE
     table = doc.add_table(rows=1, cols=2)
     table.style = 'Table Grid'
@@ -169,7 +169,7 @@ def _make_two_col_table(doc, rows_data,
 
 
 def _add_page_number(paragraph):
-    """Append a right-aligned 'Page X of Y' field to a paragraph."""
+    \"\"\"Append a right-aligned Page X of Y field to a paragraph.\"\"\"
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
 
     def _fld(text):
@@ -194,7 +194,7 @@ def _add_page_number(paragraph):
 
 
 def _add_footer_top_border(footer):
-    """Draw a thin top border on the first footer paragraph."""
+    \"\"\"Draw a thin top border on the first footer paragraph.\"\"\"
     if not footer.paragraphs:
         return
     para = footer.paragraphs[0]
@@ -210,13 +210,13 @@ def _add_footer_top_border(footer):
 
 
 # ------------------------------------------------------------
-# Main export function – returns io.BytesIO for Streamlit
+# Main export function - returns io.BytesIO for Streamlit
 # ------------------------------------------------------------
 
 def generate_docx(title: str, inputs: dict, results, narrative: str,
-                  calc_narrative: str, metadata: Optional[dict] = None,
-                  citations: Optional[list] = None) -> io.BytesIO:
-    """
+                  calc_narrative: str, metadata: dict = None,
+                  citations: list = None) -> io.BytesIO:
+    \"\"\"
     Build and return a fully-styled MDES .docx report as an in-memory buffer.
 
     Parameters
@@ -229,10 +229,10 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     calc_narrative : pre-built methodology / calculation narrative string
     metadata       : reserved for future use
     citations      : optional list of APA citation strings for the footer
-    """
+    \"\"\"
     doc = Document()
 
-    # ── Page setup ───────────────────────────────────────────────────────────
+    # Page setup
     section               = doc.sections[0]
     section.page_width    = Inches(8.5)
     section.page_height   = Inches(11)
@@ -241,7 +241,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     section.left_margin   = Inches(1.25)
     section.right_margin  = Inches(1.25)
 
-    # ── Title block ──────────────────────────────────────────────────────────
+    # Title block
     title_para           = doc.add_paragraph()
     title_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     title_run            = title_para.add_run(title)
@@ -257,7 +257,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     _add_horizontal_rule(doc)
     doc.add_paragraph()
 
-    # ── Calculation Inputs ───────────────────────────────────────────────────
+    # Calculation Inputs
     _add_section_heading(doc, 'Calculation Inputs')
     _make_two_col_table(
         doc,
@@ -267,7 +267,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     )
     doc.add_paragraph()
 
-    # ── Results ──────────────────────────────────────────────────────────────
+    # Results
     _add_section_heading(doc, 'Results')
 
     outcome_type = inputs.get('outcome_type', 'continuous')
@@ -313,28 +313,25 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     _remove_outer_borders(res_table)
     doc.add_paragraph()
 
-    # ── Interpretive Narrative ───────────────────────────────────────────────
+    # Interpretive Narrative
     _add_section_heading(doc, 'Interpretation')
     _add_body_para(doc, narrative if narrative else 'Not provided.')
 
-    # ── Methodology & Calculations ───────────────────────────────────────────
+    # Methodology & Calculations
     _add_section_heading(doc, 'Methodology & Calculations')
     _add_body_para(doc, calc_narrative if calc_narrative else 'Not provided.')
 
-    # ── Footer (all pages) ───────────────────────────────────────────────────
+    # Footer (all pages)
     default_citations = [
-        (
-            'Dong, N., & Maynard, R. (2013). PowerUp!: A tool for calculating minimum '
-            'detectable effect sizes and minimum required sample sizes for experimental '
-            'and quasi-experimental design studies. Journal of Research on Educational '
-            'Effectiveness, 6(1), 24\u201367. '
-            'https://doi.org/10.1080/19345747.2012.673143'
-        ),
-        (
-            'Kraft, M. A. (2020). Interpreting effect sizes of education interventions. '
-            'Educational Researcher, 49(4), 241\u2013253. '
-            'https://doi.org/10.3102/0013189X20912798'
-        ),
+        'Dong, N., & Maynard, R. (2013). PowerUp!: A tool for calculating minimum '
+        'detectable effect sizes and minimum required sample sizes for experimental '
+        'and quasi-experimental design studies. Journal of Research on Educational '
+        'Effectiveness, 6(1), 24\\u201367. '
+        'https://doi.org/10.1080/19345747.2012.673143',
+
+        'Kraft, M. A. (2020). Interpreting effect sizes of education interventions. '
+        'Educational Researcher, 49(4), 241\\u2013253. '
+        'https://doi.org/10.3102/0013189X20912798',
     ]
     cite_list = citations if citations else default_citations
 
@@ -342,25 +339,28 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     footer.is_linked_to_previous = False
     _add_footer_top_border(footer)
 
-    # Left-aligned APA citations
     cite_para           = footer.paragraphs[0]
     cite_para.alignment = WD_ALIGN_PARAGRAPH.LEFT
     for i, cite in enumerate(cite_list):
-        run = cite_para.add_run(('' if i == 0 else '\n') + cite)
+        run = cite_para.add_run(('' if i == 0 else '\\n') + cite)
         _style_run(run, 8, italic=True, color=_GRAY)
 
-    # Centred branding line
     branding_para           = footer.add_paragraph()
     branding_para.alignment = WD_ALIGN_PARAGRAPH.CENTER
     branding_run            = branding_para.add_run('Created with Precision MDES  v1.0.0')
     _style_run(branding_run, 8, italic=True, color=_GRAY)
 
-    # Right-aligned page number
     page_para = footer.add_paragraph()
     _add_page_number(page_para)
 
-    # ── Return buffer ────────────────────────────────────────────────────────
+    # Return buffer
     buffer = io.BytesIO()
     doc.save(buffer)
     buffer.seek(0)
     return buffer
+"""
+
+with open(r'c:\Users\HavalaHanson\projects\mdescalculator\services\export.py', 'w', encoding='utf-8') as f:
+    f.write(content)
+
+print("Done")
