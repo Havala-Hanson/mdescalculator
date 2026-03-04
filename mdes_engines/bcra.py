@@ -125,6 +125,7 @@ def compute_mdes_bcra3_2f(
     r2_level2: float,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -191,7 +192,7 @@ def compute_mdes_bcra3_2f(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     n = cluster_size
@@ -249,6 +250,7 @@ def compute_mdes_bcra3_2r(
     r2_level2: float,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -317,7 +319,7 @@ def compute_mdes_bcra3_2r(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     P = 0.5  # equal allocation

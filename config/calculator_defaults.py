@@ -144,6 +144,7 @@ DESIGN_CONFIGS = {
     # ─────────────────────────────────────────────────────────────
     "IRA": {
         "sample_fields": ["n_individuals"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": [],
         "covariate_fields": ["r2_level1"],
         "block_fields": [],
@@ -159,6 +160,7 @@ DESIGN_CONFIGS = {
     "BIRA2_1c": {
         # N = J * n; UI gives total N and number of blocks
         "sample_fields": ["n_individuals", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": [],  # no ICCs in constant block effect model
         "covariate_fields": ["r2_level1"],  # only level-1 R²
         "block_fields": ["n_blocks"],
@@ -171,6 +173,7 @@ DESIGN_CONFIGS = {
     "BIRA2_1f": {
         # Bloom-style fixed block effects with block–treatment interactions
         "sample_fields": ["n_individuals", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": [],  # still no ICCs; blocks are fixed
         "covariate_fields": ["r2_level1"],  # level-1 covariates only
         "block_fields": ["n_blocks"],
@@ -183,6 +186,7 @@ DESIGN_CONFIGS = {
     "BIRA2_1r": {
         # Random block effects; requires ICC2 and block-level R²
         "sample_fields": ["n_individuals", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc2"],
         "covariate_fields": ["r2_level1", "r2_level2"],  # r21, r2t2
         "block_fields": ["n_blocks"],
@@ -195,6 +199,7 @@ DESIGN_CONFIGS = {
     "BIRA3_1r": {
         # 3-level: individuals in clusters in blocks; random blocks + clusters
         "sample_fields": ["n_blocks", "n_clusters_per_block", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc2", "icc3"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
@@ -207,6 +212,7 @@ DESIGN_CONFIGS = {
     "BIRA4_1r": {
         # 4-level: individuals in clusters in sites in blocks
         "sample_fields": ["n_blocks", "n_sites_per_block", "n_clusters_per_site", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc2", "icc3", "icc4"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": ["n_blocks"],
@@ -221,6 +227,7 @@ DESIGN_CONFIGS = {
     # ─────────────────────────────────────────────────────────────
     "CRA2_2r": {
         "sample_fields": ["n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2"],
         "block_fields": [],
@@ -232,6 +239,7 @@ DESIGN_CONFIGS = {
 
     "CRA3_3r": {
         "sample_fields": ["n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": [],
@@ -243,6 +251,7 @@ DESIGN_CONFIGS = {
 
     "CRA4_4r": {
         "sample_fields": ["n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": [],
@@ -257,6 +266,7 @@ DESIGN_CONFIGS = {
     # ─────────────────────────────────────────────────────────────
     "BCRA3_2f": {
         "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
@@ -268,6 +278,7 @@ DESIGN_CONFIGS = {
 
     "BCRA3_2r": {
         "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
@@ -279,6 +290,7 @@ DESIGN_CONFIGS = {
 
     "BCRA4_2r": {
         "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": ["n_blocks"],
@@ -290,6 +302,7 @@ DESIGN_CONFIGS = {
 
     "BCRA4_3f": {
         "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": ["n_blocks"],
@@ -301,6 +314,7 @@ DESIGN_CONFIGS = {
 
     "BCRA4_3r": {
         "sample_fields": ["n_clusters", "cluster_size", "n_blocks"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3", "r2_level4"],
         "block_fields": ["n_blocks"],
@@ -315,6 +329,7 @@ DESIGN_CONFIGS = {
     # ─────────────────────────────────────────────────────────────
     "RD2_1f": {
         "sample_fields": ["n_units"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": [],
         "covariate_fields": ["r2_level1", "r2_level2"],
         "block_fields": ["n_blocks"],
@@ -326,6 +341,7 @@ DESIGN_CONFIGS = {
 
     "RD2_1r": {
         "sample_fields": ["n_units"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": [],
         "covariate_fields": ["r2_level1", "r2_level2"],
         "block_fields": ["n_blocks"],
@@ -337,6 +353,7 @@ DESIGN_CONFIGS = {
 
     "RD3_1f": {
         "sample_fields": ["n_units", "n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],
@@ -348,6 +365,7 @@ DESIGN_CONFIGS = {
 
     "RD3_1r": {
         "sample_fields": ["n_units", "n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": [],
@@ -362,6 +380,7 @@ DESIGN_CONFIGS = {
     # ─────────────────────────────────────────────────────────────
     "ITS": {
         "sample_fields": ["n_timepoints_pre", "n_timepoints_post", "n_clusters", "cluster_size"],
+        "two_tailed_field": ["two_tailed"],
         "icc_fields": ["icc"],
         "covariate_fields": ["r2_level1", "r2_level2", "r2_level3"],
         "block_fields": ["n_blocks"],

@@ -4,6 +4,7 @@ from mdes_engines.mdes_two_level import MDESResult, _multiplier
 
 def compute_mdes_ira(
     n_individuals: int,
+    two_tailed: bool,
     r2_level1: float,
     p: float = 0.5,
     g1: int = 0,
@@ -49,6 +50,10 @@ def compute_mdes_ira(
         bp = float(baseline_prob)
         if not 0 < bp < 1:
             raise ValueError("baseline_prob must be in (0, 1).")
+    
+    # --- One or two-tailed test ------------------------------------------------
+    M = _multiplier(alpha, power, n_individuals - g1 - 2, two_tailed=two_tailed)
+    
     # --- Degrees of freedom -------------------------------------------
     df = n_individuals - g1 - 2
     if df <= 1:
@@ -59,9 +64,6 @@ def compute_mdes_ira(
         sd = math.sqrt(bp * (1 - bp))
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
-
-    # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
 
     # --- Variance of effect estimator ---------------------------------
     var_delta = (1 - r2_level1) / (p * (1 - p) * n_individuals)

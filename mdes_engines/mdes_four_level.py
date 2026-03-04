@@ -252,6 +252,7 @@ def compute_mdes_bcra4_2(
     r2_level4: float = 0.0,  # random blocks → R2_4 = 0
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -328,7 +329,7 @@ def compute_mdes_bcra4_2(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     P = 0.5  # equal allocation
@@ -378,7 +379,7 @@ def compute_mdes_bcra4_2(
 # BCRA4_3f: Fixed blocks, assignment at level 3
 # ---------------------------------------------------------------------
 
-def compute_mdes_bcra4_3_fixed(
+def compute_mdes_bcra4_3f(
     n_level4: int,          # K blocks (fixed)
     n_level3: int,          # J sites per block (randomized)
     n_level2: int,          # L2 clusters per site
@@ -392,6 +393,7 @@ def compute_mdes_bcra4_3_fixed(
     r2_level4: float = 0.0,  # fixed blocks → R2_4 = 0, ICC4 absorbed in analysis
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -468,7 +470,7 @@ def compute_mdes_bcra4_3_fixed(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     P = 0.5  # equal allocation
@@ -521,7 +523,7 @@ def compute_mdes_bcra4_3_fixed(
 # BCRA4_3r: Random blocks, assignment at level 3
 # ---------------------------------------------------------------------
 
-def compute_mdes_bcra4_3_random(
+def compute_mdes_bcra4_3r(
     n_level4: int,          # K blocks (random)
     n_level3: int,          # J sites per block (randomized)
     n_level2: int,          # L2 clusters per site
@@ -535,6 +537,7 @@ def compute_mdes_bcra4_3_random(
     r2_level4: float = 0.0,  # random blocks → R2_4 = 0
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -611,7 +614,7 @@ def compute_mdes_bcra4_3_random(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance components ------------------------------------------
     P = 0.5  # equal allocation

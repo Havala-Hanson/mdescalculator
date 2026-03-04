@@ -9,25 +9,55 @@ design = DESIGN_BY_CODE[DESIGN_CODE]
 
 
 def render_inputs(design):
+    
+    alpha = st.number_input(
+        "Significance level (α)",
+        min_value=0.001,
+        max_value=0.20,
+        value=0.05,
+        step=0.01,
+        help="The significance level (α) is the probability of a Type I error (false positive) (i.e., the threshold for rejecting the null hypothesis). Common values are 0.05 (5% significance level) or 0.01 (1% significance level). Lower α requires stronger evidence to reject the null hypothesis, which typically increases required sample sizes.",
+    )
+
+    power = st.number_input(
+        "Power (1 - β)",
+        min_value=0.50,
+        max_value=0.99,
+        value=0.80,
+        step=0.05,
+        help="Power is the probability of correctly rejecting the null hypothesis when there is a true effect. Common values are 0.80 (80% power) or 0.90 (90% power). Higher power requires larger sample sizes.",
+    )
+
+    two_tailed = st.radio(
+        "Two-tailed or one-tailed test?",
+        options=[True, False],
+        format_func=lambda x: "Two‑tailed" if x else "One‑tailed",
+        index=0,
+        help = "Two-tailed tests are more conservative and test for effects in both directions. One-tailed tests have more power to detect an effect in a specified direction but cannot detect effects in the opposite direction. Default: Two-tailed.",
+    )
+
     n_individuals = st.number_input(
         "Total number of individuals (N)",
         min_value=4,
         value=200,
         step=10,
+        help="Total number of individuals in the study. Must be at least 4. Default: 200.",
     )
-
+    
     r2_level1 = st.number_input(
         "R² from covariates",
         min_value=0.0,
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of variance in the outcome explained by covariates. Default: 0.0 (no covariates).",
     )
 
     outcome_type = st.selectbox(
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., success/failure). Default: Continuous.",
     )
 
     baseline_prob = None
@@ -55,7 +85,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.50,
         step=0.01,
-        help="Proportion of individuals assigned to treatment. R default: 0.50.",
+        help="Proportion of individuals assigned to treatment. Default: 0.50.",
     )
 
     g1 = st.number_input(
@@ -64,27 +94,12 @@ def render_inputs(design):
         max_value=100,
         value=0,
         step=1,
-        help="Number of covariates for degrees of freedom adjustment. R default: 0.",
-    )
-
-    alpha = st.number_input(
-        "Significance level (α)",
-        min_value=0.001,
-        max_value=0.20,
-        value=0.05,
-        step=0.01,
-    )
-
-    power = st.number_input(
-        "Power (1 - β)",
-        min_value=0.50,
-        max_value=0.99,
-        value=0.80,
-        step=0.05,
+        help="Number of covariates for degrees of freedom adjustment. Default: 0.",
     )
 
     return {
         "n_individuals": n_individuals,
+        "two_tailed": two_tailed,
         "r2_level1": r2_level1,
         "p": p,
         "g1": g1,

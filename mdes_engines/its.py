@@ -8,6 +8,7 @@ def compute_mdes_its(
     autocorrelation: float,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -65,7 +66,7 @@ def compute_mdes_its(
         raise ValueError("Not enough effective timepoints for valid degrees of freedom.")
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance of level-change estimator ---------------------------
     var_delta = 1.0 / n_eff

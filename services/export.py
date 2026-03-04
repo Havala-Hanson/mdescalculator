@@ -273,8 +273,6 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     outcome_type = inputs.get('outcome_type', 'continuous')
     if outcome_type == 'binary':
         mdes_label = 'MDES (percentage points)'
-    elif getattr(results, 'mdes_raw', None) is not None:
-        mdes_label = 'MDES (raw units)'
     else:
         mdes_label = 'MDES (standardized)'
 
@@ -282,6 +280,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
         (mdes_label,              results.mdes),
         ('Standard error',        results.se),
         ('Degrees of freedom',    results.df),
+        ('Two-tailed or one-tailed', inputs.get('two_tailed', True) and 'Two-tailed' or 'One-tailed'),
         ('Design effect',         results.design_effect),
         ('Effective sample size', results.effective_n),
         ('Total sample size',     results.total_n),

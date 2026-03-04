@@ -13,6 +13,7 @@ def compute_mdes_bira(
     r2_level4: float | None = None,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -64,7 +65,7 @@ def compute_mdes_bira(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance of effect estimator ---------------------------------
     P = 0.5
@@ -109,6 +110,7 @@ def compute_mdes_bira2_1c(
     r2_level1: float = 0.0,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -153,7 +155,7 @@ def compute_mdes_bira2_1c(
         sd = outcome_sd if outcome_sd is not None else 1.0
 
     # --- M multiplier ---
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Variance ---
     var_delta = (1 - r2_level1) / (P * (1 - P) * J * n)
@@ -182,6 +184,7 @@ def compute_mdes_bira2_1f(
     r2_level1: float,
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -202,6 +205,7 @@ def compute_mdes_bira2_1f(
         outcome_type=outcome_type,
         baseline_prob=baseline_prob,
         outcome_sd=outcome_sd,
+        two_tailed=two_tailed,
     )
 
 def compute_mdes_bira2_1r(
@@ -213,6 +217,7 @@ def compute_mdes_bira2_1r(
     r2_level2: float = 0.0,   # r2t2
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -255,7 +260,7 @@ def compute_mdes_bira2_1r(
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
 
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     var_delta = (
         icc2 * omega2 * (1 - r2_level2) / J
@@ -296,6 +301,7 @@ def compute_mdes_bira3_1r(
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
     prop_treated: float = 0.5,
+    two_tailed: bool = True,
 ) -> MDESResult:
     """
     BIRA3_1r: Three-level blocked IRA, random block and cluster effects
@@ -337,7 +343,7 @@ def compute_mdes_bira3_1r(
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
 
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     var_delta = (
         icc3 * omega3 * (1 - r2_level3) / K
@@ -379,6 +385,7 @@ def compute_mdes_bira4_1r(
     r2_level4: float = 0.0,         # r2t4
     alpha: float = 0.05,
     power: float = 0.80,
+    two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
     outcome_sd: float | None = None,
@@ -428,7 +435,7 @@ def compute_mdes_bira4_1r(
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
 
-    M = _multiplier(alpha, power, df)
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     var_delta = (
         icc4 * omega4 * (1 - r2_level4) / L

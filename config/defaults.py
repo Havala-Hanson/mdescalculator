@@ -8,6 +8,7 @@ DEFAULT_INPUTS = {
             "alpha": 0.05,
             "power": 0.80,
             "r2_level1": 0.0,
+            "two_tailed": True,
         },
         "continuous": {
             "n_individuals": 200,

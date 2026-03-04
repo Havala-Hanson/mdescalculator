@@ -9,6 +9,25 @@ design = DESIGN_BY_CODE[DESIGN_CODE]
 
 
 def render_inputs(design):
+    
+    # ------------------------------------------------------------
+    # Test settings
+    # ------------------------------------------------------------
+    prop_treated = st.number_input("Proportion treated (p)", 0.05, 0.95, 0.50, 0.05,
+                                   help="Proportion of individuals who are treated in the study.")
+    alpha = st.number_input("Significance level (α)", 0.001, 0.20, 0.05, 0.01,
+        help="The significance level (α) is the probability of a Type I error (false positive) (i.e., the threshold for rejecting the null hypothesis). Common values are 0.05 (5% significance level) or 0.01 (1% significance level). Lower α requires stronger evidence to reject the null hypothesis, which typically increases required sample sizes.",
+    )
+    power = st.number_input("Power (1 − β)", 0.50, 0.99, 0.80, 0.05, 
+        help="Power is the probability of correctly rejecting the null hypothesis when there is a true effect. Common values are 0.80 (80% power) or 0.90 (90% power). Higher power requires larger sample sizes.",
+    )
+    two_tailed = st.radio(
+        "Two-tailed or one-tailed test?",
+        options=[True, False],
+        format_func=lambda x: "Two‑tailed" if x else "One‑tailed",
+        index=0,
+        help = "Two-tailed tests are more conservative and test for effects in both directions. One-tailed tests have more power to detect an effect in a specified direction but cannot detect effects in the opposite direction. Default: Two-tailed.",
+    )
 
     # ------------------------------------------------------------
     # Three-level sample structure
@@ -18,6 +37,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
+        help="Number of level-3 blocks (e.g., districts, schools). Default: 20.",
     )
 
     n_clusters_per_block = st.number_input(
@@ -25,6 +45,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
+        help="Number of clusters (e.g., schools, clinics) per block. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -32,6 +53,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
+        help="Average number of individuals per cluster. Default: 20.",
     )
 
     # ------------------------------------------------------------
@@ -43,6 +65,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
+        help="Intraclass correlation coefficient at block level: Proportion of variance in outcome explained by blocks (V3/(V1+V2+V3)). Default: 0.05.",
     )
 
     icc2 = st.number_input(
@@ -51,6 +74,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation coefficient at cluster level: Proportion of variance in outcome explained by clusters (V2/(V1+V2+V3)). Default: 0.10.",
     )
 
     # ------------------------------------------------------------
@@ -62,6 +86,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
+        help="Proportion of block-level variance that is explained by treatment assignment. Default: 1.0 (treatment explains all block-level variance).",
     )
 
     omega2 = st.number_input(
@@ -70,14 +95,18 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
+        help="Proportion of cluster-level variance that is explained by treatment assignment. Default: 1.0 (treatment explains all cluster-level variance).",
     )
 
     # ------------------------------------------------------------
     # Covariate R²
     # ------------------------------------------------------------
-    r2_level1 = st.number_input("R² level 1 (r₂₁)", 0.0, 0.99, 0.0, 0.05)
-    r2_level2 = st.number_input("R² level 2 (r₂t₂)", 0.0, 0.99, 0.0, 0.05)
-    r2_level3 = st.number_input("R² level 3 (r₂t₃)", 0.0, 0.99, 0.0, 0.05)
+    r2_level1 = st.number_input("R² level 1 (r₂₁)", 0.0, 0.99, 0.0, 0.05,
+                                help="R² for level-1 covariates (proportion of variance in outcome explained by level-1 covariates). Default: 0.0.")
+    r2_level2 = st.number_input("R² level 2 (r₂t₂)", 0.0, 0.99, 0.0, 0.05,
+                                help="R² for level-2 covariates (proportion of variance in outcome explained by level-2 covariates). Default: 0.0.")
+    r2_level3 = st.number_input("R² level 3 (r₂t₃)", 0.0, 0.99, 0.0, 0.05,
+                                help="R² for level-3 covariates (proportion of variance in outcome explained by level-3 covariates). Default: 0.0.")
 
     # ------------------------------------------------------------
     # Outcome type
@@ -87,16 +116,11 @@ def render_inputs(design):
     baseline_prob = None
     outcome_sd = None
     if outcome_type == "binary":
-        baseline_prob = st.number_input("Baseline probability", 0.01, 0.99, 0.50, 0.01)
+        baseline_prob = st.number_input("Baseline probability", 0.01, 0.99, 0.50, 0.01,
+                                        help="Baseline probability of the outcome in the control group (for binary outcomes). Default: 0.50.")
     else:
-        outcome_sd = st.number_input("Outcome SD (raw units)", 0.01, value=1.0, step=0.1)
-
-    # ------------------------------------------------------------
-    # Test settings
-    # ------------------------------------------------------------
-    prop_treated = st.number_input("Proportion treated (p)", 0.05, 0.95, 0.50, 0.05)
-    alpha = st.number_input("Significance level (α)", 0.001, 0.20, 0.05, 0.01)
-    power = st.number_input("Power (1 − β)", 0.50, 0.99, 0.80, 0.05)
+        outcome_sd = st.number_input("Outcome SD (standardized)", 0.01, value=1.0, step=0.1,
+                                     help="Standard deviation of the outcome variable in standardized units. Default: 1.0 (standardized outcome).")
 
     return {
         "n_blocks": n_blocks,
@@ -111,6 +135,7 @@ def render_inputs(design):
         "r2_level3": r2_level3,
         "alpha": alpha,
         "power": power,
+        "two_tailed": two_tailed,
         "outcome_type": outcome_type,
         "baseline_prob": baseline_prob,
         "outcome_sd": outcome_sd,

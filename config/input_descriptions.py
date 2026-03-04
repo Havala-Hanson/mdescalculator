@@ -119,4 +119,8 @@ INPUT_DESCRIPTIONS = {
         "caption": "Desired statistical power.",
         "tooltip": "For example, 0.80 means an 80% chance of detecting the true effect."
     },
+    "two_tailed": {
+        "caption": "Whether the test is two-tailed or one-tailed.",
+        "tooltip": "Two-tailed tests are more conservative and test for effects in both directions. One-tailed tests have more power to detect an effect in a specified direction but cannot detect effects in the opposite direction."
+    },
 }
