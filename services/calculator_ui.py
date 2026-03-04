@@ -168,7 +168,7 @@ def render_test_settings(design, state):
     st.subheader("Test Settings")
 
     # Always render alpha and power using the unified input renderer
-    for field in ["alpha", "power"]:
+    for field in ["alpha", "power", "two-tailed"]:
         render_input(field, state, design)
 
 # ---------------------------------------------------------------------
@@ -232,6 +232,7 @@ def render_results(result, state):
     st.metric("MDES (standardized)", f"{result.mdes:.4f}")
     st.metric("Standard error (σ₍δ₎)", f"{result.se:.4f}")
     st.metric("Degrees of freedom", f"{result.df}")
+    st.metric("Two-tailed or one-tailed", state.get("two_tailed", True) and "Two-tailed" or "One-tailed")
     st.metric("Design effect (DEFF)", f"{result.design_effect:.3f}")
     st.metric("Effective sample size", f"{result.effective_n:,.1f}")
     st.metric("Total sample size", f"{result.total_n}")
@@ -291,7 +292,7 @@ def render_calculator_page(design):
     if design.calculator_config.get("its_fields"):
         render_its_inputs(design, state)
 
-    # Test settings (alpha + power)
+    # Test settings (alpha + power + two-tailed)
     render_test_settings(design, state)
 
     st.markdown("---")
@@ -346,8 +347,8 @@ def collect_engine_inputs(design, state):
         if field in state:
             inputs[field] = state[field]
 
-    # Test settings (always alpha + power)
-    for field in ["alpha", "power"]:
+    # Test settings (always alpha + power + two_tailed)
+    for field in ["alpha", "power", "two_tailed"]:
         if field in state:
             inputs[field] = state[field]
 
@@ -376,8 +377,8 @@ from mdes_engines.mdes_three_level import compute_mdes_cra3_3
 from mdes_engines.bcra import compute_mdes_bcra
 from mdes_engines.bcra import compute_mdes_bcra3_2r
 from mdes_engines.bcra import compute_mdes_bcra3_2f
-from mdes_engines.mdes_four_level import compute_mdes_bcra4_3_random
-from mdes_engines.mdes_four_level import compute_mdes_bcra4_3_fixed
+from mdes_engines.mdes_four_level import compute_mdes_bcra4_3r
+from mdes_engines.mdes_four_level import compute_mdes_bcra4_3f
 from mdes_engines.mdes_four_level import compute_mdes_bcra4_2
 
 from mdes_engines.rd import compute_mdes_rd
@@ -398,8 +399,8 @@ ENGINE_MAP = {
     "compute_mdes_bcra": compute_mdes_bcra,
     "compute_mdes_bcra3_2r": compute_mdes_bcra3_2r,
     "compute_mdes_bcra3_2f": compute_mdes_bcra3_2f,
-    "compute_mdes_bcra4_3_random": compute_mdes_bcra4_3_random,
-    "compute_mdes_bcra4_3_fixed": compute_mdes_bcra4_3_fixed,
+    "compute_mdes_bcra4_3r": compute_mdes_bcra4_3r,
+    "compute_mdes_bcra4_3f": compute_mdes_bcra4_3f,
     "compute_mdes_bcra4_2": compute_mdes_bcra4_2,
     "compute_mdes_rd": compute_mdes_rd,
     "compute_mdes_its": compute_mdes_its,
@@ -433,6 +434,7 @@ def render_download_button(result, state, design_title, design):
     # Collect only fields relevant to this design
     ordered_fields = (
         cfg.get("sample_fields", [])
+        + cfg.get("two_tailed_field", [])
         + cfg.get("icc_fields", [])
         + cfg.get("covariate_fields", [])
         + cfg.get("block_fields", [])
@@ -464,11 +466,12 @@ def render_download_button(result, state, design_title, design):
         baseline_prob=state.get('baseline_prob'),
         alpha=state.get('alpha', 0.05),
         power=state.get('power', 0.80),
+        two_tailed=state.get('two_tailed', True),
     )
     narrative      = interp.get('narrative', 'Not provided.')
     calc_narrative = (
         f"The MDES was computed using the {design_title} design, "
-        f"which applies a two-tailed test with "
+        f"which applies a {state.get('two_tailed', True) and 'two-tailed' or 'one-tailed'} test with "
         f"\u03b1={state.get('alpha', 0.05)} and "
         f"power={state.get('power', 0.80)}. Variance components and covariate "
         f"adjustments were incorporated according to the design\u2019s statistical "
