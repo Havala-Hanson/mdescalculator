@@ -10,8 +10,12 @@ from services.interpretation import interpret_mdes
 from services.prepopulate import prepopulate_for_design
 import streamlit as st
 
-def read_initial_state(design):
-    prepopulate_for_design(design, st.session_state)
+def read_initial_state(design, outcome_type="continuous"):
+    if (
+        st.session_state.get("selected_design") != design.code
+        or st.session_state.get("outcome_type") != outcome_type
+    ):
+        prepopulate_for_design(design, st.session_state, outcome_type=outcome_type)
     return st.session_state
 
 # ---------------------------------------------------------------------
@@ -23,18 +27,36 @@ import re
 def render_header(design):
     hdr = design.calculator_header
 
-    st.title(f"{hdr['icon']} {hdr['title']}")
+    st.header(f"{hdr['icon']} {hdr['title']}")
     st.subheader(hdr["subtitle"])
     st.markdown(hdr["description"])
+    
+    with st.expander("Statistical background"):
+        st.markdown(
+            "**Structure:**  Three levels: individuals (1) within clusters (2) within blocks (3). "
+            "Clusters are randomized within blocks; block effects are fixed. Assignment at level 2.\n\n"
+            "**Key formulas:**\n\n")
+        st.markdown(r"- **Variance**")
+        
+        st.latex(
+            r"""
+            \operatorname{Var}(\hat{\delta}) =
+            \left[
+            \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
+            + \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+            \right]
+            \cdot \frac{K}{K - 1}
+            """
+        )
+        st.markdown("- **Degrees of freedom:**")
+        st.latex(r"\text{df} = K(J - 1) - 1")
 
-    with st.expander("📖 Statistical background"):
-        bg = design.calculator_background
+        st.markdown("- **Adjustment for covariates:** R-squrared for levels 1 and 2 reduce between- and within-cluster variance; with the finite-block correction:")
+        st.latex(r"\frac{K}{K-1}")
+        
 
-        # Auto-wrap bare formulas
-        if not re.search(r"\${1,2}.*\${1,2}", bg):
-            bg = f"$$\n{bg}\n$$"
 
-        st.markdown(bg, unsafe_allow_html=True)
+
 
 # ---------------------------------------------------------------------
 # Input renderers
@@ -175,7 +197,7 @@ def render_test_settings(design, state):
 # Outcome-type inputs
 # ---------------------------------------------------------------------
 
-def render_outcome_type_inputs(design, state):
+def render_outcome_type_inputs(state):
     st.subheader("Outcome Type")
 
     # Choose outcome type
@@ -209,16 +231,6 @@ def render_outcome_type_inputs(design, state):
         state["outcome_sd"] = math.sqrt(baseline_prob * (1 - baseline_prob))
         return
 
-    # Continuous outcome
-    outcome_sd_input = st.number_input(
-        "Outcome SD (optional)",
-        min_value=0.0,
-        value=state.get("outcome_sd_input", 1.0),
-        step=0.1,
-    )
-    state["outcome_sd_input"] = outcome_sd_input
-    state["outcome_sd"] = outcome_sd_input if outcome_sd_input > 0 else None
-
 # ---------------------------------------------------------------------
 # Results rendering
 # ---------------------------------------------------------------------
@@ -229,19 +241,24 @@ def render_results(result, state):
 
     st.subheader("Results")
 
-    st.metric("MDES (standardized)", f"{result.mdes:.4f}")
+    outcome_type = state.get("outcome_type")
+
+    # For continuous outcomes, show standardized MDES once.
+    # For binary outcomes, show standardized MDES (if available) and percentage points.
+    if outcome_type == "continuous":
+        st.metric("MDES (standardized)", f"{result.mdes:.4f}")
+    else:
+        st.metric("MDES (standardized)", f"{result.mdes:.4f}")
+        st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f} pp")
+
+    st.write("DEBUG result:", result)
+    st.write("DEBUG result dict:", result.__dict__)
     st.metric("Standard error (σ₍δ₎)", f"{result.se:.4f}")
     st.metric("Degrees of freedom", f"{result.df}")
-    st.metric("Two-tailed or one-tailed", state.get("two_tailed", True) and "Two-tailed" or "One-tailed")
+    
     st.metric("Design effect (DEFF)", f"{result.design_effect:.3f}")
     st.metric("Effective sample size", f"{result.effective_n:,.1f}")
     st.metric("Total sample size", f"{result.total_n}")
-
-    if result.mdes_pct_points is not None:
-        st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f} pp")
-
-    if result.mdes_raw is not None:
-        st.metric("MDES (raw units)", f"{result.mdes_raw:.4f}")
 
     interp = interpret_mdes(
         mdes=result.mdes,
@@ -258,46 +275,51 @@ def render_results(result, state):
 # ---------------------------------------------------------------------
 
 def render_calculator_page(design):
+    with st.container():
+        render_header(design)
+
+    st.markdown("---")
+
     state = read_initial_state(design)
 
-    # Header + background
-    render_header(design)
+    with st.container():
+        render_outcome_type_inputs(design, state)
+        st.markdown("---")
 
-    st.markdown("---")
+    # 4. Sample size inputs
+    with st.container():
+        render_sample_inputs(design, state)
 
-    # Outcome type first (because it affects SD logic)
-    render_outcome_type_inputs(design, state)
+    # 5. ICC + covariates
+    with st.container():
+        render_icc_covariate_inputs(design, state)
 
-    st.markdown("---")
-
-    # Sample size inputs
-    render_sample_inputs(design, state)
-
-    # ICC + covariates
-    render_icc_covariate_inputs(design, state)
-
-    # Blocking (if applicable)
+    # 6. Blocking (if applicable)
     if design.calculator_config.get("block_fields"):
-        render_block_inputs(design, state)
+        with st.container():
+            render_block_inputs(design, state)
 
-    # Cluster structure (if applicable)
+    # 7. Cluster structure (if applicable)
     if design.calculator_config.get("cluster_fields"):
-        render_cluster_inputs(design, state)
+        with st.container():
+            render_cluster_inputs(design, state)
 
-    # RD inputs (if applicable)
+    # 8. RD inputs (if applicable)
     if design.calculator_config.get("rd_fields"):
-        render_rd_inputs(design, state)
+        with st.container():
+            render_rd_inputs(design, state)
 
-    # ITS inputs (if applicable)
+    # 9. ITS inputs (if applicable)
     if design.calculator_config.get("its_fields"):
-        render_its_inputs(design, state)
+        with st.container():
+            render_its_inputs(design, state)
 
-    # Test settings (alpha + power + two-tailed)
-    render_test_settings(design, state)
+    # 10. Test settings
+    with st.container():
+        render_test_settings(design, state)
+        st.markdown("---")
 
-    st.markdown("---")
-
-    # Run engine
+    # 11. Run engine + results
     if st.button("Compute MDES"):
         inputs = collect_engine_inputs(design, state)
         result = run_engine(design, inputs)
@@ -466,7 +488,6 @@ def render_download_button(result, state, design_title, design):
         baseline_prob=state.get('baseline_prob'),
         alpha=state.get('alpha', 0.05),
         power=state.get('power', 0.80),
-        two_tailed=state.get('two_tailed', True),
     )
     narrative      = interp.get('narrative', 'Not provided.')
     calc_narrative = (

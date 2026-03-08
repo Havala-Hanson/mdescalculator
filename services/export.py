@@ -224,7 +224,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     title          : descriptive report title (e.g. design name)
     inputs         : ordered dict of user-selected calculation inputs
     results        : result object with attributes mdes, se, df, design_effect,
-                     effective_n, total_n; and optionally mdes_raw / mdes_pct_points
+                     effective_n, total_n; and optionally mdes_standardized / mdes_pct_points
     narrative      : pre-built interpretive narrative string
     calc_narrative : pre-built methodology / calculation narrative string
     metadata       : reserved for future use
@@ -287,8 +287,8 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     ]
     if getattr(results, 'mdes_pct_points', None) is not None and outcome_type != 'binary':
         result_rows.insert(1, ('MDES (percentage points)', results.mdes_pct_points))
-    if getattr(results, 'mdes_raw', None) is not None and outcome_type != 'binary':
-        result_rows.insert(1, ('MDES (raw units)', results.mdes_raw))
+    if getattr(results, 'mdes_standardized', None) is not None and outcome_type != 'binary':
+        result_rows.insert(1, ('MDES (standardized)', results.mdes_standardized))
 
     res_table = doc.add_table(rows=1, cols=2)
     res_table.style = 'Table Grid'

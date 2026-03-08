@@ -90,8 +90,8 @@ def compute_mdes_bcra(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw-unit MDES (continuous) -----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    # --- Standardized MDES (continuous) -----------------------------------
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -104,17 +104,31 @@ def compute_mdes_bcra(
     # --- Interpretation placeholder -----------------------------------
     interpretation = None
 
-    return MDESResult(
-        mdes=round(mdes, 4),
-        se=round(se, 4),
-        df=df,
-        design_effect=round(design_effect, 3),
-        effective_n=round(effective_n, 1),
-        total_n=total_n,
-        mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
-        interpretation=interpretation,
-    )
+
+    if outcome_type == "binary":
+            return MDESResult(
+            mdes=round(mdes, 4),
+            se=round(se, 4),
+            df=df,
+            design_effect=round(design_effect, 3),
+            effective_n=round(effective_n, 1),
+            total_n=total_n,
+            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
+            mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
+            interpretation=interpretation,
+        )
+    else:
+        return MDESResult(
+            mdes=round(mdes, 4),
+            se=round(se, 4),
+            df=df,
+            design_effect=round(design_effect, 3),
+            effective_n=round(effective_n, 1),
+            total_n=total_n,
+            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
+            mdes_pct_points=None,
+            interpretation=interpretation,
+        )
 
 def compute_mdes_bcra3_2f(
     n_level3: int,          # K blocks
@@ -213,8 +227,8 @@ def compute_mdes_bcra3_2f(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw-unit MDES (continuous) -----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    # --- Standardized MDES (continuous) --------------------------------
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -228,17 +242,29 @@ def compute_mdes_bcra3_2f(
     # --- Interpretation placeholder -----------------------------------
     interpretation = None
 
-    return MDESResult(
-        mdes=round(mdes, 4),
-        se=round(se, 4),
-        df=df,
-        design_effect=round(design_effect, 3),
-        effective_n=round(effective_n, 1),
-        total_n=total_n,
-        mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
-        interpretation=interpretation,
-    )
+    if outcome_type == "binary":
+        return MDESResult(
+            mdes=round(mdes, 4),
+            se=round(se, 4),
+            df=df,
+            design_effect=round(design_effect, 3),
+            effective_n=round(effective_n, 1),
+            total_n=total_n,
+            mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points is not None else None,
+            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized is not None else None,
+            interpretation=interpretation,
+        )
+    else:
+        return MDESResult(
+            mdes=round(mdes, 4),
+            se=round(se, 4),
+            df=df,
+            design_effect=round(design_effect, 3),
+            effective_n=round(effective_n, 1),
+            total_n=total_n,
+            mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points is not None else None,
+            interpretation=interpretation,
+        )
 
 def compute_mdes_bcra3_2r(
     n_level3: int,          # K blocks (random)
@@ -339,8 +365,8 @@ def compute_mdes_bcra3_2r(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw-unit MDES (continuous) -----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    # --- Standardized MDES (continuous) --------------------------------       
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -358,6 +384,6 @@ def compute_mdes_bcra3_2r(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
-        interpretation=None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
+        interpretation="",
     )

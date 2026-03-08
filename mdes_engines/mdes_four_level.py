@@ -209,14 +209,14 @@ def compute_mdes_cra4_4(
 
     # --- Outcome scaling ----------------------------------------------
     mdes_pct_points: Optional[float] = None
-    mdes_raw: Optional[float] = None
+    mdes_standardized: Optional[float] = None
 
     if outcome_type == "binary" and baseline_prob is not None:
         sigma_binary = math.sqrt(baseline_prob * (1.0 - baseline_prob))
         mdes_pct_points = mdes * sigma_binary * 100.0
 
     if outcome_type == "continuous" and outcome_sd is not None:
-        mdes_raw = mdes * outcome_sd
+        mdes_standardized = mdes * outcome_sd
 
     # --- Interpretation placeholder -----------------------------------
     interpretation = None
@@ -229,7 +229,7 @@ def compute_mdes_cra4_4(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=interpretation,
     )
 
@@ -350,7 +350,7 @@ def compute_mdes_bcra4_2(
     mdes = M * se
 
     # --- Raw / percentage-point MDES ----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
@@ -371,7 +371,7 @@ def compute_mdes_bcra4_2(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )
 
@@ -494,7 +494,7 @@ def compute_mdes_bcra4_3f(
     mdes = M * se
 
     # --- Raw / percentage-point MDES ----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
@@ -515,7 +515,7 @@ def compute_mdes_bcra4_3f(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )
 
@@ -635,7 +635,7 @@ def compute_mdes_bcra4_3r(
     mdes = M * se
 
     # --- Raw / percentage-point MDES ----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
@@ -656,6 +656,6 @@ def compute_mdes_bcra4_3r(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )

@@ -121,11 +121,11 @@ def test_block_correction():
 # 5. Outcome scaling tests
 # ---------------------------------------------------------------------
 def test_outcome_scaling():
-    # Continuous: MDES_raw = MDES * sd
+    # Continuous: mdes_standardized = MDES * sd
     res = compute_mdes_bcra4_2(**BASE)
-    assert math.isclose(res.mdes_raw, res.mdes * BASE["outcome_sd"], rel_tol=1e-6)
+    assert math.isclose(res.mdes_standardized, res.mdes * BASE["outcome_sd"], rel_tol=1e-6)
 
-    # Binary: MDES_pct_points = MDES * 100
+    # Binary: mdes_pct_points = MDES * 100
     binary_params = {**BASE, "outcome_type": "binary", "baseline_prob": 0.5}
     res_bin = compute_mdes_bcra4_2(**binary_params)
     assert math.isclose(res_bin.mdes_pct_points, res_bin.mdes * 100, rel_tol=1e-6)

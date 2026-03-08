@@ -11,14 +11,32 @@ FAMILY_BACKGROUNDS = {
 where \(N\) is total sample size and \(P\) is the treatment proportion.
 """,
     "BCRA3_2f": r"""
-**Model:** [Placeholder for BCRA3_2f model]
+- **Structure:**
+  Three levels: individuals (1) within clusters (2) within blocks (3). Clusters are randomized within blocks; block effects are fixed (absorbed as intercepts). Assignment at level 2.
 
-**MDES formula:**
+- **Key formulas:**
+
+- **Variance of \(\hat{\delta}\):**
 
 \[
-	ext{[Placeholder for BCRA3_2f formula]}
+\operatorname{Var}(\hat{\delta}) =
+\left[
+  \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
+  + \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+\right]
+\cdot \frac{K}{K - 1}
 \]
-""",
+
+- **Degrees of freedom:**
+
+\[
+\text{df} = K(J - 1) - 1
+\]
+
+- **Adjustment for covariates:**
+  \(R^2_2\) and \(R^2_1\) reduce between- and within-cluster variance; the \(\frac{K}{K-1}\) factor is the finite-block correction.
+"""
+,
     "BCRA3_2r": r"""
 **Model:** [Placeholder for BCRA3_2r model]
 
@@ -29,9 +47,31 @@ where \(N\) is total sample size and \(P\) is the treatment proportion.
 \]
 """,
     "BCRA4_2r": r"""
-**Model:** [Placeholder for BCRA4_2r model]
+- **Structure:**  
+  Three levels: individuals (1) within clusters (2) within blocks (3). Clusters are randomized within blocks; block effects are fixed (absorbed as intercepts). Assignment at level 2.
 
-**MDES formula:**
+- **Key formulas:**
+
+  - **Variance of \(\hat{\delta}\):**
+
+    \[
+    \operatorname{Var}(\hat{\delta}) =
+    \left[
+      \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
+    + \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+    \right]
+    \cdot \frac{K}{K - 1}
+    \]
+
+  - **Degrees of freedom:**
+
+    \[
+    \text{df} = K(J - 1) - 1
+    \]
+
+  - **Adjustment for covariates:**  
+    \(R^2_2\) and \(R^2_1\) reduce between- and within-cluster variance; the \(\frac{K}{K-1}\) factor is the finite-block correction.
+
 
 \[
 	ext{[Placeholder for BCRA4_2r formula]}

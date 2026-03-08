@@ -127,12 +127,12 @@ def compute_mdes_cra3_3(
     effective_n = total_n / design_effect
 
     mdes_pct_points = None
-    mdes_raw = None
+    mdes_standardized = None
     if outcome_type == "binary" and baseline_prob is not None:
         sigma_binary = math.sqrt(baseline_prob * (1.0 - baseline_prob))
         mdes_pct_points = mdes * sigma_binary * 100.0
     if outcome_type == "continuous" and outcome_sd is not None:
-        mdes_raw = mdes * outcome_sd
+        mdes_standardized = mdes * outcome_sd
 
     return MDESResult(
         mdes=round(mdes, 4),
@@ -142,6 +142,6 @@ def compute_mdes_cra3_3(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )

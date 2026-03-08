@@ -78,8 +78,8 @@ def compute_mdes_bira(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw-unit MDES (continuous) -----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    # --- Standardized MDES (continuous) -----------------------------------
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -100,7 +100,7 @@ def compute_mdes_bira(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=interpretation,
     )
 
@@ -163,7 +163,7 @@ def compute_mdes_bira2_1c(
 
     # --- MDES ---
     mdes = M * se
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     return MDESResult(
@@ -174,7 +174,7 @@ def compute_mdes_bira2_1c(
         effective_n=round(N, 1),
         total_n=N,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )
 
@@ -269,7 +269,7 @@ def compute_mdes_bira2_1r(
     se = math.sqrt(var_delta)
     mdes = M * se
 
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     return MDESResult(
@@ -280,7 +280,7 @@ def compute_mdes_bira2_1r(
         effective_n=round(N, 1),
         total_n=N,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )
 
@@ -353,7 +353,7 @@ def compute_mdes_bira3_1r(
     se = math.sqrt(var_delta)
     mdes = M * se
 
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     return MDESResult(
@@ -364,7 +364,7 @@ def compute_mdes_bira3_1r(
         effective_n=round(N, 1),
         total_n=N,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )
 
@@ -447,7 +447,7 @@ def compute_mdes_bira4_1r(
     se = math.sqrt(var_delta)
     mdes = M * se
 
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     return MDESResult(
@@ -458,6 +458,6 @@ def compute_mdes_bira4_1r(
         effective_n=round(N, 1),
         total_n=N,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=None,
     )

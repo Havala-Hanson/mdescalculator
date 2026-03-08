@@ -75,8 +75,8 @@ def compute_mdes_its(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw-unit MDES (continuous) -----------------------------------
-    mdes_raw = mdes * sd if outcome_type == "continuous" else None
+    # --- Standardized MDES (continuous) -----------------------------------
+    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -97,6 +97,6 @@ def compute_mdes_its(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_raw=round(mdes_raw, 4) if mdes_raw else None,
+        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation=interpretation,
     )
