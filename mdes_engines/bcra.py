@@ -90,9 +90,6 @@ def compute_mdes_bcra(
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Standardized MDES (continuous) -----------------------------------
-    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
-
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
@@ -113,7 +110,7 @@ def compute_mdes_bcra(
             design_effect=round(design_effect, 3),
             effective_n=round(effective_n, 1),
             total_n=total_n,
-            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
+            mdes_standardized=None,
             mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
             interpretation=interpretation,
         )
@@ -125,8 +122,7 @@ def compute_mdes_bcra(
             design_effect=round(design_effect, 3),
             effective_n=round(effective_n, 1),
             total_n=total_n,
-            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
-            mdes_pct_points=None,
+            mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
             interpretation=interpretation,
         )
 
@@ -195,7 +191,7 @@ def compute_mdes_bcra3_2f(
     # df = K(J - 1) - 1
     K = n_level3
     J = n_level2
-    df = K * (J - 1) - 1
+    df = K * (J - 2)
     if df <= 1:
         raise ValueError("Not enough blocks/clusters for valid degrees of freedom.")
 
@@ -219,16 +215,10 @@ def compute_mdes_bcra3_2f(
     term_within = (1 - rho2) * (1 - r2_level1) / (P * (1 - P) * K * J * n)
     var_cra = term_between + term_within
 
-    # Block adjustment for fixed effects at level 3
-    block_factor = K / (K - 1)
-    var_delta = var_cra * block_factor
-    se = math.sqrt(var_delta)
+    se = math.sqrt(var_cra)
 
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
-
-    # --- Standardized MDES (continuous) --------------------------------
-    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -251,7 +241,6 @@ def compute_mdes_bcra3_2f(
             effective_n=round(effective_n, 1),
             total_n=total_n,
             mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points is not None else None,
-            mdes_standardized=round(mdes_standardized, 4) if mdes_standardized is not None else None,
             interpretation=interpretation,
         )
     else:
@@ -274,6 +263,9 @@ def compute_mdes_bcra3_2r(
     icc2: float,            # level-2 ICC (clusters)
     r2_level1: float,
     r2_level2: float,
+    omega3: float = 1.0,
+    r2_level3: float = 0.0,
+    g3: int = 0,
     alpha: float = 0.05,
     power: float = 0.80,
     two_tailed: bool = True,
@@ -315,10 +307,14 @@ def compute_mdes_bcra3_2r(
         raise ValueError("icc2 must be in [0, 1).")
     if icc2 + icc3 >= 1:
         raise ValueError("icc2 + icc3 must be < 1.")
+    if omega3 < 0:
+        raise ValueError("omega3 must be >= 0.")
     if not 0 <= r2_level1 < 1:
         raise ValueError("r2_level1 must be in [0, 1).")
     if not 0 <= r2_level2 < 1:
         raise ValueError("r2_level2 must be in [0, 1).")
+    if not 0 <= r2_level3 < 1:
+        raise ValueError("r2_level3 must be in [0, 1).")
     if not 0 < alpha < 1:
         raise ValueError("alpha must be in (0, 1).")
     if not 0 < power < 1:
@@ -334,7 +330,10 @@ def compute_mdes_bcra3_2r(
     K = n_level3
     J = n_level2
     n = cluster_size
-    df = K - 2
+    p = 0.5
+    denom = p * (1 - p)
+
+    df = K - g3 - 1
     if df <= 1:
         raise ValueError("Not enough blocks for valid degrees of freedom.")
 
@@ -344,29 +343,24 @@ def compute_mdes_bcra3_2r(
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
 
-    # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
-
     # --- Variance components ------------------------------------------
-    P = 0.5  # equal allocation
-
     # Level-3 variance (blocks)
-    term_l3 = icc3 * (1 - r2_level2) / (P * (1 - P) * K)
+    term_l3 = icc3 * omega3 * (1 - r2_level3) / K
 
     # Level-2 variance (clusters)
-    term_l2 = icc2 * (1 - r2_level2) / (P * (1 - P) * K * J)
+    term_l2 = icc2 * (1 - r2_level2) / (denom * K * J)
 
     # Level-1 variance
-    term_l1 = (1 - icc2 - icc3) * (1 - r2_level1) / (P * (1 - P) * K * J * n)
+    term_l1 = (1 - icc2 - icc3) * (1 - r2_level1) / (denom * K * J * n)
 
     var_delta = term_l3 + term_l2 + term_l1
     se = math.sqrt(var_delta)
 
+    # --- M multiplier --------------------------------------------------
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
+
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
-
-    # --- Standardized MDES (continuous) --------------------------------       
-    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
@@ -384,6 +378,5 @@ def compute_mdes_bcra3_2r(
         effective_n=round(effective_n, 1),
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
-        mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
         interpretation="",
     )

@@ -1,5 +1,6 @@
 import streamlit as st
 import math
+import re 
 
 from services.interpretation import interpret_mdes
 
@@ -8,7 +9,6 @@ from services.interpretation import interpret_mdes
 # ---------------------------------------------------------------------
 
 from services.prepopulate import prepopulate_for_design
-import streamlit as st
 
 def read_initial_state(design, outcome_type="continuous"):
     if (
@@ -21,9 +21,6 @@ def read_initial_state(design, outcome_type="continuous"):
 # ---------------------------------------------------------------------
 # Header + statistical background
 # ---------------------------------------------------------------------
-
-import re
-
 def render_header(design):
     hdr = design.calculator_header
 

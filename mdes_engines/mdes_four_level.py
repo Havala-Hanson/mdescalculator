@@ -60,16 +60,21 @@ def _se_cra4_4(
     n_level2: int,
     cluster_size: int,
 ) -> float:
-    denom_base = p_treat * (1.0 - p_treat)
+    L = n_level4
+    K = n_level3
+    J = n_level2
+    n = cluster_size
+
+    denom = p_treat * (1.0 - p_treat)
     icc1 = max(0.0, 1.0 - icc4 - icc3 - icc2)
 
-    variance = (
-        icc4 * (1.0 - r2_level4) / (denom_base * n_level4)
-        + icc3 * (1.0 - r2_level3) / (denom_base * n_level4 * n_level3)
-        + icc2 * (1.0 - r2_level2) / (denom_base * n_level4 * n_level3 * n_level2)
-        + icc1 * (1.0 - r2_level1)
-        / (denom_base * n_level4 * n_level3 * n_level2 * cluster_size)
-    )
+    # PowerUpR structure:
+    term_l4 = icc4 * (1.0 - r2_level4) / (denom * L)
+    term_l3 = icc3 * (1.0 - r2_level3) / (denom * K * L)
+    term_l2 = icc2 * (1.0 - r2_level2) / (denom * J * K * L)
+    term_l1 = icc1 * (1.0 - r2_level1) / (denom * J * K * L * n)
+
+    variance = term_l4 + term_l3 + term_l2 + term_l1
     return math.sqrt(max(variance, 0.0))
 
 
@@ -103,7 +108,7 @@ def compute_mdes_cra4_4(
 
     Mirrors R's mdes.cra4r4 (PowerUpR):
 
-        df  = L - g4 - 2
+        df  = L - g4 - 1
         SSE = sqrt[
             ρ₄(1−R²₄) / (p(1-p)·L)
           + ρ₃(1−R²₃) / (p(1-p)·K·L)
@@ -248,17 +253,23 @@ def compute_mdes_bcra4_2(
     icc2: float,
     r2_level1: float,
     r2_level2: float,
-    r2_level3: float,
-    r2_level4: float = 0.0,  # random blocks → R2_4 = 0
+    r2_treat3: float = 0.0,
+    r2_treat4: float = 0.0,  # random blocks → R2_4 = 0,
+    omega3=1.0,
+    omega4=1.0,
+    p_treat=0.5,
+    g4=0,
     alpha: float = 0.05,
     power: float = 0.80,
     two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
-    outcome_sd: float | None = None,
+    outcome_sd: float | None = None
 ) -> MDESResult:
     """
     BCRA4_2r: 4-level blocked CRT, random blocks, assignment at level 2 (clusters).
+
+    Mirrors PowerUpR::mdes.bcra4r2.
 
     Levels:
         4: blocks (random)
@@ -266,20 +277,19 @@ def compute_mdes_bcra4_2(
         2: clusters (randomized)
         1: individuals
 
-    Var(delta) =
-        4 * [
-            icc4 * (1 - R2_4) / K
-          + icc3 * (1 - R2_3) / (K * L3)
-          + icc2 * (1 - R2_2) / (K * L3 * L2)
-          + (1 - icc4 - icc3 - icc2) * (1 - R2_1) / (K * L3 * L2 * n)
-        ]
+        df  = L - g4 - 1
 
-    df = K - 2
+        SSE^2 =
+            icc4 * omega4 * (1 - r2_treat4) / L
+          + icc3 * omega3 * (1 - r2_treat3) / (K * L)
+          + icc2 * (1 - r2_level2) / (p(1-p) * J * K * L)
+          + (1 - icc4 - icc3 - icc2) * (1 - r2_level1)
+                / (p(1-p) * J * K * L * n)
     """
 
     # --- Validation ----------------------------------------------------
     if n_level4 < 4:
-        raise ValueError("n_level4 (blocks) must be at least 4 for df = K - 2.")
+        raise ValueError("n_level4 (blocks) must be at least 4 for df = L - g4 - 1.")
     if n_level3 < 1:
         raise ValueError("n_level3 must be at least 1.")
     if n_level2 < 2:
@@ -293,7 +303,8 @@ def compute_mdes_bcra4_2(
         ("icc2", icc2),
         ("r2_level1", r2_level1),
         ("r2_level2", r2_level2),
-        ("r2_level3", r2_level3),
+        ("r2_treat3", r2_treat3),
+        ("r2_treat4", r2_treat4),
     ]:
         if not 0 <= val < 1:
             raise ValueError(f"{name} must be in [0, 1).")
@@ -313,12 +324,12 @@ def compute_mdes_bcra4_2(
             raise ValueError("baseline_prob must be in (0, 1).")
 
     # --- Degrees of freedom -------------------------------------------
-    K = n_level4
-    L3 = n_level3
-    L2 = n_level2
+    L = n_level4
+    K = n_level3
+    J = n_level2
     n = cluster_size
 
-    df = K - 2
+    df = L - g4 - 1
     if df <= 1:
         raise ValueError("Not enough blocks for valid degrees of freedom.")
 
@@ -328,23 +339,28 @@ def compute_mdes_bcra4_2(
     else:
         sd = outcome_sd if outcome_sd is not None else 1.0
 
-    # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
-
+    # --- Denominator -------------------------------------------------
+    P = p_treat
+    denom = P * (1 - P)
+    
+    if denom <= 0:
+        raise ValueError("p_treat must be in (0, 1) to avoid division by zero.")
+    
     # --- Variance components ------------------------------------------
-    P = 0.5  # equal allocation
-
-    term_l4 = icc4 * (1 - r2_level4) / (P * (1 - P) * K)
-    term_l3 = icc3 * (1 - r2_level3) / (P * (1 - P) * K * L3)
-    term_l2 = icc2 * (1 - r2_level2) / (P * (1 - P) * K * L3 * L2)
+    term_l4 = icc4 * omega4 * (1 - r2_treat4) / L
+    term_l3 = icc3 * omega3 * (1 - r2_treat3) / (K * L)
+    term_l2 = icc2 * (1 - r2_level2) / (denom * J * K * L)
     term_l1 = (
         (1 - icc4 - icc3 - icc2)
         * (1 - r2_level1)
-        / (P * (1 - P) * K * L3 * L2 * n)
+        / (denom * J * K * L * n)
     )
 
     var_delta = term_l4 + term_l3 + term_l2 + term_l1
     se = math.sqrt(var_delta)
+
+    # --- M multiplier --------------------------------------------------
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
 
     # --- Standardized MDES --------------------------------------------
     mdes = M * se
@@ -354,12 +370,12 @@ def compute_mdes_bcra4_2(
     mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
 
     # --- Design effect & effective N ----------------------------------
-    total_n = K * L3 * L2 * n
+    total_n = K * L * J * n
     design_effect = (
         1
         + (n - 1) * icc2
-        + (L2 * n - 1) * icc3
-        + (L3 * L2 * n - 1) * icc4
+        + (J * n - 1) * icc3
+        + (L * J * n - 1) * icc4
     )
     effective_n = total_n / design_effect
 
@@ -372,7 +388,7 @@ def compute_mdes_bcra4_2(
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
         mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
-        interpretation=None,
+        interpretation="",
     )
 
 # ---------------------------------------------------------------------
@@ -380,55 +396,50 @@ def compute_mdes_bcra4_2(
 # ---------------------------------------------------------------------
 
 def compute_mdes_bcra4_3f(
-    n_level4: int,          # K blocks (fixed)
-    n_level3: int,          # J sites per block (randomized)
-    n_level2: int,          # L2 clusters per site
-    cluster_size: int,      # n individuals per cluster
+    n_level4: int,      # L blocks (fixed)
+    n_level3: int,      # K level-3 units per block (randomized)
+    n_level2: int,      # J clusters per level-3
+    cluster_size: int,  # n individuals per cluster
     icc4: float,
     icc3: float,
     icc2: float,
     r2_level1: float,
     r2_level2: float,
     r2_level3: float,
-    r2_level4: float = 0.0,  # fixed blocks → R2_4 = 0, ICC4 absorbed in analysis
+    p_treat: float = 0.5,
+    g3: int = 0,
     alpha: float = 0.05,
     power: float = 0.80,
     two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
-    outcome_sd: float | None = None,
+    outcome_sd: float | None = 1.0,
 ) -> MDESResult:
     """
-    BCRA4_3f: 4-level blocked CRT, fixed blocks, assignment at level 3 (sites).
+    BCRA4_3f: 4-level blocked CRT, fixed blocks, randomization at level 3.
 
-    Levels:
-        4: blocks (fixed)
-        3: sites (randomized)
-        2: clusters
-        1: individuals
+    Mirrors PowerUpR::mdes.bcra4f3:
 
-    ICC4 is absorbed by fixed block effects → drops from variance.
+        df  = L * (K - 2) - g3
 
-    Var(delta) =
-        4 / (K * J) * [
-            icc3 * (1 - R2_3)
-          + icc2 * (1 - R2_2) / L2
-          + (1 - icc3 - icc2) * (1 - R2_1) / (L2 * n)
-        ] * [ K / (K - 1) ]
-
-    df = K(J - 1) - 1
+        SSE^2 =
+            rho3 * (1 - r23) / (p(1-p) * K * L)
+          + rho2 * (1 - r22) / (p(1-p) * J * K * L)
+          + (1 - rho3 - rho2) * (1 - r21) /
+                (p(1-p) * J * K * L * n)
     """
+    L = n_level4
+    K = n_level3
+    J = n_level2
+    n = cluster_size
 
-    # --- Validation ----------------------------------------------------
-    if n_level4 < 2:
-        raise ValueError("n_level4 (blocks) must be at least 2.")
-    if n_level3 < 2:
-        raise ValueError("n_level3 (sites per block) must be at least 2.")
-    if n_level2 < 1:
-        raise ValueError("n_level2 (clusters per site) must be at least 1.")
-    if cluster_size < 1:
-        raise ValueError("cluster_size must be at least 1.")
-
+    if K < 3:
+        raise ValueError("n_level3 (K) must be at least 3 for df = L*(K-2)-g3.")
+    if L < 1 or J < 1 or n < 1:
+        raise ValueError("All level sizes must be >= 1.")
+    # Fixed blocks: level-4 random variation is absorbed by block fixed effects.
+    if icc3 + icc2 >= 1.0:
+        raise ValueError("icc3 + icc2 must be < 1 for BCRA4_3f.")
     for name, val in [
         ("icc3", icc3),
         ("icc2", icc2),
@@ -436,83 +447,49 @@ def compute_mdes_bcra4_3f(
         ("r2_level2", r2_level2),
         ("r2_level3", r2_level3),
     ]:
-        if not 0 <= val < 1:
+        if not 0.0 <= val < 1.0:
             raise ValueError(f"{name} must be in [0, 1).")
-
-    if icc3 + icc2 >= 1:
-        raise ValueError("icc3 + icc2 must be < 1 (ICC4 absorbed by blocks).")
-
-    if not 0 < alpha < 1:
-        raise ValueError("alpha must be in (0, 1).")
-    if not 0 < power < 1:
-        raise ValueError("power must be in (0, 1).")
-
+    if not 0.0 < p_treat < 1.0:
+        raise ValueError("p_treat must be in (0, 1).")
+    if g3 < 0:
+        raise ValueError("g3 must be >= 0.")
     if outcome_type == "binary":
-        if baseline_prob is None:
-            raise ValueError("baseline_prob is required for binary outcomes.")
-        if not 0 < baseline_prob < 1:
-            raise ValueError("baseline_prob must be in (0, 1).")
+        if baseline_prob is None or not 0.0 < baseline_prob < 1.0:
+            raise ValueError("baseline_prob must be in (0, 1) for binary outcomes.")
 
-    # --- Degrees of freedom -------------------------------------------
-    K = n_level4
-    J = n_level3
-    L2 = n_level2
-    n = cluster_size
-
-    df = K * (J - 1) - 1
+    df = L * (K - 2) - g3
     if df <= 1:
-        raise ValueError("Not enough blocks/sites for valid degrees of freedom.")
+        raise ValueError("Not enough df: df = L*(K-2) - g3 must be > 1.")
 
-    # --- Outcome SD ----------------------------------------------------
-    if outcome_type == "binary":
-        sd = math.sqrt(baseline_prob * (1 - baseline_prob))
-    else:
-        sd = outcome_sd if outcome_sd is not None else 1.0
+    denom = p_treat * (1.0 - p_treat)
+    icc1 = max(0.0, 1.0 - icc3 - icc2)
 
-    # --- M multiplier --------------------------------------------------
+    term_l3 = icc3 * (1.0 - r2_level3) / (denom * K * L)
+    term_l2 = icc2 * (1.0 - r2_level2) / (denom * J * K * L)
+    term_l1 = icc1 * (1.0 - r2_level1) / (denom * J * K * L * n)
+
+    var_delta = term_l3 + term_l2 + term_l1
+    se = math.sqrt(max(var_delta, 0.0))
+
     M = _multiplier(alpha, power, df, two_tailed=two_tailed)
-
-    # --- Variance components ------------------------------------------
-    P = 0.5  # equal allocation
-
-    term_l3 = icc3 * (1 - r2_level3) / (P * (1 - P) * K * J)
-    term_l2 = icc2 * (1 - r2_level2) / (P * (1 - P) * K * J * L2)
-    term_l1 = (
-        (1 - icc3 - icc2)
-        * (1 - r2_level1)
-        / (P * (1 - P) * K * J * L2 * n)
-    )
-
-    var_base = term_l3 + term_l2 + term_l1
-
-    # Block finite-sample correction
-    block_factor = K / (K - 1)
-    var_delta = var_base * block_factor
-    se = math.sqrt(var_delta)
-
-    # --- Standardized MDES --------------------------------------------
     mdes = M * se
 
-    # --- Raw / percentage-point MDES ----------------------------------
-    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
-    mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
+    if outcome_type == "binary":
+        sigma = math.sqrt(baseline_prob * (1.0 - baseline_prob))
+        mdes_pct_points = mdes * sigma * 100.0
+        mdes_standardized = None
+    else:
+        mdes_pct_points = None
+        mdes_standardized = mdes * (outcome_sd if outcome_sd is not None else 1.0)
 
-    # --- Design effect & effective N ----------------------------------
-    total_n = K * J * L2 * n
-    # For reporting, use 3-level DE (blocks fixed, ICC4 absorbed)
-    design_effect = (
-        1
-        + (n - 1) * icc2
-        + (L2 * n - 1) * icc3
-    )
-    effective_n = total_n / design_effect
+    total_n = L * K * J * n
 
     return MDESResult(
         mdes=round(mdes, 4),
         se=round(se, 4),
         df=df,
-        design_effect=round(design_effect, 3),
-        effective_n=round(effective_n, 1),
+        design_effect=None,
+        effective_n=None,
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
         mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,
@@ -524,53 +501,60 @@ def compute_mdes_bcra4_3f(
 # ---------------------------------------------------------------------
 
 def compute_mdes_bcra4_3r(
-    n_level4: int,          # K blocks (random)
-    n_level3: int,          # J sites per block (randomized)
-    n_level2: int,          # L2 clusters per site
-    cluster_size: int,      # n individuals per cluster
+    n_level4: int,
+    n_level3: int,
+    n_level2: int,
+    cluster_size: int,
     icc4: float,
     icc3: float,
     icc2: float,
-    r2_level1: float,
-    r2_level2: float,
-    r2_level3: float,
-    r2_level4: float = 0.0,  # random blocks → R2_4 = 0
+    r2_level1: float = 0.0,
+    r2_level2: float = 0.0,
+    r2_level3: float = 0.0,
+    r2_treat4: float = 0.0,
+    omega4: float = 1.0,
+    p_treat: float = 0.5,
+    g4: int = 0,
     alpha: float = 0.05,
     power: float = 0.80,
     two_tailed: bool = True,
     outcome_type: str = "continuous",
     baseline_prob: float | None = None,
-    outcome_sd: float | None = None,
+    outcome_sd: float | None = 1.0,
 ) -> MDESResult:
     """
-    BCRA4_3r: 4-level blocked CRT, random blocks, assignment at level 3 (sites).
+    BCRA4_3r: 4-level blocked CRT, random blocks, randomization at level 3.
+
+    Mirrors PowerUpR::mdes.bcra4r3.
 
     Levels:
         4: blocks (random)
-        3: sites (randomized)
+        3: level-3 units (randomized)
         2: clusters
         1: individuals
 
-    Var(delta) =
-        4 * [
-            icc4 * (1 - R2_4) / K
-          + icc3 * (1 - R2_3) / (K * J)
-          + icc2 * (1 - R2_2) / (K * J * L2)
-          + (1 - icc4 - icc3 - icc2) * (1 - R2_1) / (K * J * L2 * n)
-        ]
+        df  = L - g4 - 1
 
-    df = K - 2
+        SSE^2 =
+            icc4 * omega4 * (1 - r2_treat4) / L
+          + icc3 * (1 - r2_level3) / (p(1-p) * K * L)
+          + icc2 * (1 - r2_level2) / (p(1-p) * J * K * L)
+          + (1 - icc4 - icc3 - icc2) * (1 - r2_level1)
+                / (p(1-p) * J * K * L * n)
     """
 
     # --- Validation ----------------------------------------------------
     if n_level4 < 4:
-        raise ValueError("n_level4 (blocks) must be at least 4 for df = K - 2.")
+        raise ValueError("n_level4 (blocks) must be at least 4 for df = L - g4 - 1.")
     if n_level3 < 2:
-        raise ValueError("n_level3 (sites per block) must be at least 2.")
+        raise ValueError("n_level3 must be at least 2.")
     if n_level2 < 1:
-        raise ValueError("n_level2 (clusters per site) must be at least 1.")
+        raise ValueError("n_level2 must be at least 1.")
     if cluster_size < 1:
         raise ValueError("cluster_size must be at least 1.")
+
+    if icc4 + icc3 + icc2 >= 1.0:
+        raise ValueError("icc4 + icc3 + icc2 must be < 1.")
 
     for name, val in [
         ("icc4", icc4),
@@ -579,81 +563,70 @@ def compute_mdes_bcra4_3r(
         ("r2_level1", r2_level1),
         ("r2_level2", r2_level2),
         ("r2_level3", r2_level3),
+        ("r2_treat4", r2_treat4),
     ]:
-        if not 0 <= val < 1:
+        if not 0.0 <= val < 1.0:
             raise ValueError(f"{name} must be in [0, 1).")
 
-    if icc4 + icc3 + icc2 >= 1:
-        raise ValueError("icc4 + icc3 + icc2 must be < 1.")
-
+    if not 0.0 < p_treat < 1.0:
+        raise ValueError("p_treat must be in (0, 1).")
+    if g4 < 0:
+        raise ValueError("g4 must be >= 0.")
     if not 0 < alpha < 1:
         raise ValueError("alpha must be in (0, 1).")
     if not 0 < power < 1:
         raise ValueError("power must be in (0, 1).")
 
+    L = n_level4
+    K = n_level3
+    J = n_level2
+    n = cluster_size
+
+    df = L - g4 - 1
+    if df <= 1:
+        raise ValueError("Not enough blocks for valid df (df = L - g4 - 1).")
+
+    # --- binary outcome validation ---
     if outcome_type == "binary":
         if baseline_prob is None:
             raise ValueError("baseline_prob is required for binary outcomes.")
-        if not 0 < baseline_prob < 1:
+        if not 0.0 < baseline_prob < 1.0:
             raise ValueError("baseline_prob must be in (0, 1).")
 
-    # --- Degrees of freedom -------------------------------------------
-    K = n_level4
-    J = n_level3
-    L2 = n_level2
-    n = cluster_size
+    # --- variance ---
+    denom = p_treat * (1.0 - p_treat)
+    icc1 = max(0.0, 1.0 - icc4 - icc3 - icc2)
 
-    df = K - 2
-    if df <= 1:
-        raise ValueError("Not enough blocks for valid degrees of freedom.")
-
-    # --- Outcome SD ----------------------------------------------------
-    if outcome_type == "binary":
-        sd = math.sqrt(baseline_prob * (1 - baseline_prob))
-    else:
-        sd = outcome_sd if outcome_sd is not None else 1.0
-
-    # --- M multiplier --------------------------------------------------
-    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
-
-    # --- Variance components ------------------------------------------
-    P = 0.5  # equal allocation
-
-    term_l4 = icc4 * (1 - r2_level4) / (P * (1 - P) * K)
-    term_l3 = icc3 * (1 - r2_level3) / (P * (1 - P) * K * J)
-    term_l2 = icc2 * (1 - r2_level2) / (P * (1 - P) * K * J * L2)
-    term_l1 = (
-        (1 - icc4 - icc3 - icc2)
-        * (1 - r2_level1)
-        / (P * (1 - P) * K * J * L2 * n)
-    )
+    term_l4 = icc4 * omega4 * (1.0 - r2_treat4) / L
+    term_l3 = icc3 * (1.0 - r2_level3) / (denom * K * L)
+    term_l2 = icc2 * (1.0 - r2_level2) / (denom * J * K * L)
+    term_l1 = icc1 * (1.0 - r2_level1) / (denom * J * K * L * n)
 
     var_delta = term_l4 + term_l3 + term_l2 + term_l1
-    se = math.sqrt(var_delta)
+    se = math.sqrt(max(var_delta, 0.0))
 
-    # --- Standardized MDES --------------------------------------------
+    # --- multiplier ---
+    M = _multiplier(alpha, power, df, two_tailed=two_tailed)
     mdes = M * se
 
-    # --- Raw / percentage-point MDES ----------------------------------
-    mdes_standardized = mdes * sd if outcome_type == "continuous" else None
-    mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
+    # --- outcome scaling ---
+    mdes_pct_points = None
+    mdes_standardized = None
 
-    # --- Design effect & effective N ----------------------------------
-    total_n = K * J * L2 * n
-    design_effect = (
-        1
-        + (n - 1) * icc2
-        + (L2 * n - 1) * icc3
-        + (J * L2 * n - 1) * icc4
-    )
-    effective_n = total_n / design_effect
+    if outcome_type == "binary":
+        sigma = math.sqrt(baseline_prob * (1.0 - baseline_prob))
+        mdes_pct_points = mdes * sigma * 100.0
+    else:
+        mdes_standardized = mdes * (outcome_sd if outcome_sd is not None else 1.0)
+
+    total_n = L * K * J * n
 
     return MDESResult(
         mdes=round(mdes, 4),
         se=round(se, 4),
         df=df,
-        design_effect=round(design_effect, 3),
-        effective_n=round(effective_n, 1),
+        design_effect=None,
+        effective_n=None,
         total_n=total_n,
         mdes_pct_points=round(mdes_pct_points, 2) if mdes_pct_points else None,
         mdes_standardized=round(mdes_standardized, 4) if mdes_standardized else None,

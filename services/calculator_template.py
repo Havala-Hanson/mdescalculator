@@ -49,9 +49,6 @@ def render_calculator_page(
 
     col1, col2 = st.columns(2)
     with col1:
-        st.metric("MDES (standardized)", f"{result.mdes:.3f}")
-        if result.mdes_standardized is not None:
-            st.metric("MDES (standardized)", f"{result.mdes_standardized:.3f}")
         if result.mdes_pct_points is not None:
             st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f}")
 

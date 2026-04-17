@@ -146,9 +146,7 @@ def render_comparison():
             notes.append("Uses the three-level MDES engine.")
         elif design.is_blocked:
             notes.append("Uses the blocked MDES engine.")
-
-        return notes
-
+        
         from services.prepopulate import prepopulate_for_design
 
         st.write(f"### {left.title}")
@@ -167,6 +165,9 @@ def render_comparison():
         if st.button(f"Send {right.title} to calculator", key="calc_right"):
             prepopulate_for_design(right.code, st.session_state, outcome_type)
             st.switch_page(right.page)
+
+        return notes
+
 
     st.subheader("How the classifier interpreted your description")
     st.write(

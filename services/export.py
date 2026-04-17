@@ -224,7 +224,7 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
     title          : descriptive report title (e.g. design name)
     inputs         : ordered dict of user-selected calculation inputs
     results        : result object with attributes mdes, se, df, design_effect,
-                     effective_n, total_n; and optionally mdes_standardized / mdes_pct_points
+                     effective_n, total_n; and optionally mdes_pct_points
     narrative      : pre-built interpretive narrative string
     calc_narrative : pre-built methodology / calculation narrative string
     metadata       : reserved for future use

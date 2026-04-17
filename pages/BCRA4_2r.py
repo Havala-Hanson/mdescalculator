@@ -72,6 +72,15 @@ def render_inputs(design):
         step=1,
     )
 
+    p_treat = st.number_input(
+        "Treatment allocation ratio (p)",
+        min_value=0.05,
+        max_value=0.95,
+        value=0.5,
+        step=0.05,
+        help="Proportion of level-2 units (clusters) assigned to treatment. Default: 0.5 (balanced).",
+    )
+
     # -----------------------------
     # ICCs
     # -----------------------------
@@ -99,6 +108,22 @@ def render_inputs(design):
         step=0.01,
     )
 
+    omega3 = st.number_input(
+        "Treatment-effect heterogeneity across level-3 units (ω₃)",
+        min_value=0.0,
+        value=1.0,
+        step=0.1,
+        help="Ratio of treatment-effect variance to outcome variance at level 3 (units within blocks). ω₃=0 means constant treatment effects; ω₃=1 means they vary as much as the level-3 outcome variance. Default: 1.0.",
+    )
+
+    omega4 = st.number_input(
+        "Treatment-effect heterogeneity across blocks (ω₄)",
+        min_value=0.0,
+        value=1.0,
+        step=0.1,
+        help="Ratio of treatment-effect variance to outcome variance at the block level. ω₄=0 means constant across blocks; ω₄=1 means they vary as much as the level-4 outcome variance. Default: 1.0.",
+    )
+
     # -----------------------------
     # Covariates
     # -----------------------------
@@ -118,16 +143,31 @@ def render_inputs(design):
         step=0.05,
     )
 
-    r2_level3 = st.number_input(
-        "R² (level-3 covariates)",
+    r2_treat3 = st.number_input(
+        "R² (level-3 covariates, treatment-effect variance)",
         min_value=0.0,
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of level-3 treatment-effect variance explained by level-3 covariates. Only meaningful when ω₃ > 0. Default: 0.0.",
     )
 
-    # Level‑4 covariates are absorbed by blocking → not used in variance
-    r2_level4 = 0.0
+    r2_treat4 = st.number_input(
+        "R² (block covariates, treatment-effect variance)",
+        min_value=0.0,
+        max_value=0.99,
+        value=0.0,
+        step=0.05,
+        help="Proportion of block-level treatment-effect variance explained by block-level covariates. Only meaningful when ω₄ > 0. Default: 0.0.",
+    )
+
+    g4 = st.number_input(
+        "Number of level-4 (block) covariates (g₄)",
+        min_value=0,
+        value=0,
+        step=1,
+        help="Number of block-level covariates used in the model. Reduces degrees of freedom: df = L − g₄ − 1. Default: 0.",
+    )
 
     # -----------------------------
     # Outcome type
@@ -165,13 +205,17 @@ def render_inputs(design):
         "n_level3": n_level3,
         "n_level2": n_level2,
         "cluster_size": cluster_size,
+        "p_treat": p_treat,
         "icc4": icc4,
         "icc3": icc3,
         "icc2": icc2,
+        "omega3": omega3,
+        "omega4": omega4,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
-        "r2_level3": r2_level3,
-        "r2_level4": r2_level4,  # fixed-effects block → 0
+        "r2_treat3": r2_treat3,
+        "r2_treat4": r2_treat4,
+        "g4": g4,
         "alpha": alpha,
         "power": power,
         "two_tailed": two_tailed,
