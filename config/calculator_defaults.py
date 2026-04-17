@@ -70,29 +70,41 @@ where \(\rho\) is ICC, \(J\) clusters, \(n\) cluster size.
 """
     },
 
-    "BCRA": {
-        "icon": "🏢",
-        "title": "Blocked Cluster Random Assignment",
-        "subtitle": "Clusters randomized within blocks",
+    "BCRA3_2f": {
+        "icon": "",
+        "title": "Blocked Cluster Random Assignment (3-level, fixed blocks)",
+        "subtitle": "Clusters randomized within blocks; block fixed effects",
         "description": (
             "Use this design when clusters are randomized within blocks. "
             "Block effects may be constant, fixed, or random."
         ),
         "background_markdown": r"""
-**Model:** \(Y_{ijb} = \beta_0 + \delta T_{jb} + \gamma_b + u_{jb} + e_{ijb}\)
+- **Structure:**
+  Three levels: individuals (1) within clusters (2) within blocks (3). Clusters are randomized within blocks; block effects are fixed (absorbed as intercepts). Assignment at level 2.
 
-Blocked CRTs adjust for block-level differences.
+- **Key formulas:**
 
-**MDES formula** (Dong & Maynard, 2013):
+    - **Variance of \(\hat{\delta}\):**
 
 \[
-\text{MDES} = M_{\alpha,\nu} \cdot \sqrt{
-    \frac{\rho(1 - R^2_2)}{P(1-P)J}
-    + \frac{(1-\rho)(1 - R^2_1)}{P(1-P)Jn}
-    - \frac{\text{BlockVar}}{P(1-P)J}
-}
+\operatorname{Var}(\hat{\delta}) =
+\left[
+  \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
++ \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+\right]
+\cdot \frac{K}{K - 1}
 \]
+
+- **Degrees of freedom:**
+
+\[
+\text{df} = K(J - 1) - 1
+\]
+
+- **Adjustment for covariates:**
+  \(R^2_2\) and \(R^2_1\) reduce between- and within-cluster variance; the \(\frac{K}{K-1}\) factor is the finite-block correction.
 """
+
     },
 
     "RD": {

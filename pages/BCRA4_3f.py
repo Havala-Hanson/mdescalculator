@@ -72,6 +72,15 @@ def render_inputs(design):
         step=1,
     )
 
+    p_treat = st.number_input(
+        "Treatment allocation ratio (p)",
+        min_value=0.05,
+        max_value=0.95,
+        value=0.5,
+        step=0.05,
+        help="Proportion of level-3 units assigned to treatment within each block. Default: 0.5 (balanced).",
+    )
+
     # -----------------------------
     # ICCs
     # -----------------------------
@@ -126,8 +135,13 @@ def render_inputs(design):
         step=0.05,
     )
 
-    # Level‑4 covariates are absorbed by blocking → set to 0
-    r2_level4 = 0.0
+    g3 = st.number_input(
+        "Number of level-3 covariates (g₃)",
+        min_value=0,
+        value=0,
+        step=1,
+        help="Number of level-3 covariates used in the model. Reduces degrees of freedom: df = L·(K − 2) − g₃. Default: 0.",
+    )
 
     # -----------------------------
     # Outcome type
@@ -165,13 +179,14 @@ def render_inputs(design):
         "n_level3": n_level3,
         "n_level2": n_level2,
         "cluster_size": cluster_size,
+        "p_treat": p_treat,
         "icc4": icc4,
         "icc3": icc3,
         "icc2": icc2,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
         "r2_level3": r2_level3,
-        "r2_level4": r2_level4,  # fixed-effects blocks
+        "g3": g3,
         "alpha": alpha,
         "power": power,
         "two_tailed": two_tailed,

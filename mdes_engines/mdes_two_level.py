@@ -34,7 +34,7 @@ class MDESResult:
     effective_n: float
     total_n: int
     mdes_pct_points: Optional[float] = None
-    mdes_raw: Optional[float] = None
+    mdes_standardized: Optional[float] = None
     interpretation: str = ""
 
 

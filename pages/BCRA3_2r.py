@@ -84,6 +84,14 @@ def render_inputs(design):
         step=0.01,
     )
 
+    omega3 = st.number_input(
+        "Treatment-effect heterogeneity across blocks (ω₃)",
+        min_value=0.0,
+        value=1.0,
+        step=0.1,
+        help="Ratio of treatment-effect variance to outcome variance at the block level. ω₃=0 means treatment effects are constant across blocks; ω₃=1 means they vary as much as the level-3 outcome variance. Default: 1.0.",
+    )
+
     # -----------------------------
     # Covariates
     # -----------------------------
@@ -101,6 +109,23 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+    )
+
+    r2_level3 = st.number_input(
+        "R² (level-3 covariates)",
+        min_value=0.0,
+        max_value=0.99,
+        value=0.0,
+        step=0.05,
+        help="Proportion of block-level (level-3) variance explained by block-level covariates. Default: 0.0.",
+    )
+
+    g3 = st.number_input(
+        "Number of level-3 covariates (g₃)",
+        min_value=0,
+        value=0,
+        step=1,
+        help="Number of block-level covariates used in the model. Reduces degrees of freedom: df = K − g₃ − 1. Default: 0.",
     )
 
     # -----------------------------
@@ -142,6 +167,9 @@ def render_inputs(design):
         "icc2": icc2,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
+        "r2_level3": r2_level3,
+        "omega3": omega3,
+        "g3": g3,
         "alpha": alpha,
         "power": power,
         "two_tailed": two_tailed,

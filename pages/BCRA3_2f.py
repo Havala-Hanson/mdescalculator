@@ -10,8 +10,18 @@ DESIGN_CODE = "BCRA3_2f"
 design = DESIGN_BY_CODE[DESIGN_CODE]
 
 
-def render_inputs(design):
-    
+def render_inputs(design, outcome_type):
+    baseline_prob = None
+    if outcome_type == "binary":
+        baseline_prob = st.number_input(
+            "Baseline probability",
+            min_value=0.0,
+            max_value=1.0,
+            value=0.50,
+            step=0.01,
+            key="baseline_prob_input"
+        )
+
     # -----------------------------
     # Test settings
     # -----------------------------
@@ -96,34 +106,7 @@ def render_inputs(design):
         step=0.05,
     )
 
-    # -----------------------------
-    # Outcome type
-    # -----------------------------
-    outcome_type = st.selectbox(
-        "Outcome type",
-        ["continuous", "binary"],
-        index=0,
-    )
-
-    baseline_prob = None
-    outcome_sd = None
-
-    if outcome_type == "binary":
-        baseline_prob = st.number_input(
-            "Baseline probability",
-            min_value=0.01,
-            max_value=0.99,
-            value=0.50,
-            step=0.01,
-        )
-    else:
-        outcome_sd = st.number_input(
-            "Outcome SD (raw units)",
-            min_value=0.01,
-            value=1.0,
-            step=0.1,
-        )
-
+    
     # -----------------------------
     # Return engine inputs
     # -----------------------------
@@ -139,13 +122,60 @@ def render_inputs(design):
         "two_tailed": two_tailed,
         "outcome_type": outcome_type,
         "baseline_prob": baseline_prob,
-        "outcome_sd": outcome_sd,
     }
 
 def render():
+    # 1. Render header at the very top
+    hdr = design.calculator_header
+    st.header(f"{hdr['icon']} {hdr['title']}")
+    st.subheader(hdr["subtitle"])
+    st.markdown(hdr["description"])
+
+    with st.expander("Statistical background"):
+        st.markdown(
+            "**Structure:**  Three levels: individuals (1) within clusters (2) within blocks (3). "
+            "Clusters are randomized within blocks; block effects are fixed. Assignment at level 2.\n\n"
+            "**Key formulas:**\n\n"
+        )
+        st.markdown(r"- **Variance**")
+        st.latex(
+            r"""
+            \operatorname{Var}(\hat{\delta}) =
+            \left[
+            \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
+            + \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+            \right]
+            \cdot \frac{K}{K - 1}
+            """
+        )
+        st.markdown("- **Degrees of freedom:**")
+        st.latex(r"\text{df} = K(J - 1) - 1")
+        st.markdown(
+            "- **Adjustment for covariates:** R-squared for levels 1 and 2 reduce between- "
+            "and within-cluster variance; with the finite-block correction:"
+        )
+        st.latex(r"\frac{K}{K-1}")
+
+    st.markdown("---")
+
+    # Move outcome_type selection outside the form for dynamic rendering
+    outcome_type = st.radio(
+        "Outcome type",
+        options=["continuous", "binary"],
+        index=0,
+        horizontal=True,
+        key="outcome_type_radio"
+    )
+
+    st. session_state["outcome_type"] = outcome_type
+
+    #st.markdown("---")
+
+    def input_render_fn(design):
+        return render_inputs(design, outcome_type)
     render_calculator_page(
         design=design,
-        input_render_fn=render_inputs,
+        input_render_fn=input_render_fn,
         engine_fn=compute_mdes_bcra3_2f,
     )
 

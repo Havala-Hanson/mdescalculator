@@ -25,7 +25,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.80,
         step=0.05,
-        help="Power is the probability of correctly rejecting the null hypothesis when there is a true effect. Common values are 0.80 (80% power) or 0.90 (90% power). Higher power requires larger sample sizes
+        help="Power is the probability of correctly rejecting the null hypothesis when there is a true effect. Common values are 0.80 (80% power) or 0.90 (90% power). Higher power requires larger sample sizes"
     )
 
     two_tailed = st.radio(
