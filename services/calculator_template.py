@@ -47,15 +47,24 @@ def render_calculator_page(
     # -----------------------------
     st.subheader("Results")
 
+    outcome_type = inputs.get("outcome_type")
+
     col1, col2 = st.columns(2)
     with col1:
-        if result.mdes_pct_points is not None:
-            st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f}")
+        st.metric("MDES (standardized)", f"{result.mdes:.4f}")
+        if outcome_type == "binary" and result.mdes_pct_points is not None:
+            st.metric("MDES (percentage points)", f"{result.mdes_pct_points:.2f} pp")
+        elif result.mdes_standardized is not None:
+            st.metric("MDES (raw units)", f"{result.mdes_standardized:.4f}")
 
     with col2:
         st.metric("Standard error", f"{result.se:.4f}")
         st.metric("Degrees of freedom", f"{result.df}")
-        st.metric("Effective N", f"{result.effective_n:.1f}")
+        if result.design_effect is not None:
+            st.metric("Design effect (DEFF)", f"{result.design_effect:.3f}")
+        if result.effective_n is not None:
+            st.metric("Effective N", f"{result.effective_n:.1f}")
+        st.metric("Total N", f"{result.total_n}")
 
     # -----------------------------
     # Interpretation panel

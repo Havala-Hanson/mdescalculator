@@ -4,7 +4,6 @@ import streamlit as st
 from config.designs import DESIGN_BY_CODE
 from mdes_engines.bcra import compute_mdes_bcra3_2f
 from services.calculator_template import render_calculator_page
-from services.calculator_ui import render_header
 
 
 DESIGN_CODE = "BCRA3_2f"
@@ -127,7 +126,36 @@ def render_inputs(design, outcome_type):
 
 def render():
     # 1. Render header at the very top
-    render_header(design)
+    hdr = design.calculator_header
+    st.header(f"{hdr['icon']} {hdr['title']}")
+    st.subheader(hdr["subtitle"])
+    st.markdown(hdr["description"])
+
+    with st.expander("Statistical background"):
+        st.markdown(
+            "**Structure:**  Three levels: individuals (1) within clusters (2) within blocks (3). "
+            "Clusters are randomized within blocks; block effects are fixed. Assignment at level 2.\n\n"
+            "**Key formulas:**\n\n"
+        )
+        st.markdown(r"- **Variance**")
+        st.latex(
+            r"""
+            \operatorname{Var}(\hat{\delta}) =
+            \left[
+            \frac{\rho_2(1 - R^2_2)}{P(1-P)\,K\,J}
+            + \frac{(1 - \rho_2)(1 - R^2_1)}{P(1-P)\,K\,J\,n}
+            \right]
+            \cdot \frac{K}{K - 1}
+            """
+        )
+        st.markdown("- **Degrees of freedom:**")
+        st.latex(r"\text{df} = K(J - 1) - 1")
+        st.markdown(
+            "- **Adjustment for covariates:** R-squared for levels 1 and 2 reduce between- "
+            "and within-cluster variance; with the finite-block correction:"
+        )
+        st.latex(r"\frac{K}{K-1}")
+
     st.markdown("---")
 
     # Move outcome_type selection outside the form for dynamic rendering
