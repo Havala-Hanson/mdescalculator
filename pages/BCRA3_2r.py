@@ -47,8 +47,9 @@ def render_inputs(design):
     n_level3 = st.number_input(
         "Number of level-3 blocks (K)",
         min_value=1,
-        value=20,
+        value=50,
         step=1,
+        help="Number of level-3 blocks (e.g., schools). Increasing K increases the number of randomized units (K × J), which improves power. In this design, blocks also contribute treatment-effect heterogeneity (ω₃), so more blocks help stabilize those estimates. Default: 50."
     )
 
     n_level2 = st.number_input(
@@ -56,14 +57,16 @@ def render_inputs(design):
         min_value=3,
         value=5,
         step=1,
-    )
+        help="Number of level-2 units (e.g., classrooms) within each block. Increasing J increases the number of randomized units (K × J), which improves power, with diminishing returns when ICC2 is high. Default: 5."
+        )
 
     cluster_size = st.number_input(
         "Average number of level-1 units per level-2 unit (n)",
         min_value=1,
         value=30,
         step=1,
-    )
+       help="Average number of level-1 units (e.g., individuals) per level-2 unit. Larger cluster sizes reduce the within-cluster variance component, improving power, though gains diminish when ICC2 is high. Default: 30."
+       )
 
     # -----------------------------
     # ICCs
@@ -74,7 +77,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-    )
+        help="Intraclass correlation at level 3 (e.g., schools). Represents the proportion of outcome variance between blocks. This variance is separate from treatment-effect heterogeneity (ω₃). Higher ICC3 increases the between-block outcome variance component. Default: 0.05."
+        )
 
     icc2 = st.number_input(
         "ICC (level 2)",
@@ -82,15 +86,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
-    )
+        help="Intraclass correlation at level 2 (e.g., classrooms). Represents the proportion of outcome variance between level-2 units. Higher ICC2 increases the between-cluster variance component and typically increases the MDES. Default: 0.10."
+        )
 
     omega3 = st.number_input(
         "Treatment-effect heterogeneity across blocks (ω₃)",
         min_value=0.0,
         value=1.0,
         step=0.1,
-        help="Ratio of treatment-effect variance to outcome variance at the block level. ω₃=0 means treatment effects are constant across blocks; ω₃=1 means they vary as much as the level-3 outcome variance. Default: 1.0.",
-    )
+        help="Treatment-effect heterogeneity across blocks. ω₃ represents the ratio of treatment-effect variance to outcome variance at the block level. ω₃ = 0 means treatment effects are constant across blocks; higher values indicate more variation in treatment effects. This term increases the MDES but is not reduced by covariates. Default: 1.0."
+        )
 
     # -----------------------------
     # Covariates
@@ -101,7 +106,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-1 (individual-level) variance explained by covariates. Higher values reduce residual variance and lower the MDES. Default: 0.0."
+        )
 
     r2_level2 = st.number_input(
         "R² (level-2 covariates)",
@@ -109,7 +115,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-2 (cluster-level) variance explained by covariates. Higher values reduce between-cluster variance and lower the MDES. Default: 0.0."
+        )
 
     r2_level3 = st.number_input(
         "R² (level-3 covariates)",
@@ -117,16 +124,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="Proportion of block-level (level-3) variance explained by block-level covariates. Default: 0.0.",
-    )
+        help="Proportion of level-3 (block-level) outcome variance explained by covariates. This reduces the outcome ICC3 component but does not reduce treatment-effect heterogeneity (ω₃). Default: 0.0."
+        )
 
     g3 = st.number_input(
         "Number of level-3 covariates (g₃)",
         min_value=0,
         value=0,
         step=1,
-        help="Number of block-level covariates used in the model. Reduces degrees of freedom: df = K − g₃ − 1. Default: 0.",
-    )
+        help="Number of block-level covariates included in the model. These reduce degrees of freedom: df = K − g₃ − 1. More covariates can reduce variance but also reduce df, which can increase the MDES. Default: 0."
+        )
 
     # -----------------------------
     # Outcome type
@@ -135,6 +142,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., pass/fail). This choice affects the calculation of the standard deviation and the MDES. Default: Continuous.",
     )
 
     baseline_prob = None
@@ -147,14 +155,16 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
-        )
+            help="Baseline probability of the outcome in the control group. Determines the variance of a binary outcome: p(1−p). Values near 0 or 1 reduce variance and can increase the MDES. Default: 0.50."
+            )
     else:
         outcome_sd = st.number_input(
             "Outcome SD (raw units)",
             min_value=0.01,
             value=1.0,
             step=0.1,
-        )
+            help="Standard deviation of the continuous outcome. Larger SD values indicate more variability and increase the MDES. Default: 1.0."
+            )
 
     # -----------------------------
     # Return engine inputs
@@ -184,6 +194,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bcra3_2r,
+        sensitivity_fields=["n_level3", "n_level2", "cluster_size", "icc2", "icc3", "omega3", "r2_level1", "r2_level2", "r2_level3"],
     )
 
 render()

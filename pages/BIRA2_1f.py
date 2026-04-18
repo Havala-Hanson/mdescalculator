@@ -47,6 +47,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
+        help="Number of blocks (clusters) in the design. More blocks generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_individuals = st.number_input(
@@ -54,6 +55,7 @@ def render_inputs(design):
         min_value=4,
         value=200,
         step=10,
+        help="Total number of individuals in the study (N). This is the product of the number of blocks (J) and the number of individuals per block (n). More individuals generally increase power. Default: 200.",
     )
 
     # ------------------------------------------------------------
@@ -65,6 +67,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of individual-level variance explained by individual-level covariates. More explained variance can increase power. Default: 0.0.",
+    )
+
+    n_covariates_level1 = st.number_input(
+        "Number of level-1 covariates (g1)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of level-1 covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
     )
 
     # ------------------------------------------------------------
@@ -86,6 +98,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher proportion of the control group having the outcome, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -93,6 +106,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome in raw units. Higher values indicate more variability in the outcome, which can increase the required sample size. Only needed for continuous outcomes. Default: 1.0.",
         )
 
     # ------------------------------------------------------------
@@ -102,6 +116,7 @@ def render_inputs(design):
         "n_individuals": n_individuals,
         "n_blocks": n_blocks,
         "r2_level1": r2_level1,
+        "n_covariates_level1": n_covariates_level1, 
         "alpha": alpha,
         "power": power,
         "two_tailed": two_tailed,
@@ -116,6 +131,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira2_1f,
+        sensitivity_fields=["n_individuals", "n_blocks", "r2_level1", "n_covariates_level1"],
     )
 
 render()

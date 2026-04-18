@@ -58,6 +58,7 @@ def render_inputs(design):
         min_value=3,
         value=20,
         step=1,
+        help="Number of level-4 units (e.g., districts) in the design. More level-4 units generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_level3 = st.number_input(
@@ -65,6 +66,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
+        help="Number of level-3 units per level-4 unit (e.g., schools per district). More level-3 units generally increase power, especially when there is treatment-effect heterogeneity among level-3 units. Default: 5.",
     )
 
     n_level2 = st.number_input(
@@ -72,6 +74,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
+        help="Number of level-2 units per level-3 unit (e.g., classrooms per school). More level-2 units generally increase power, especially when there is treatment-effect heterogeneity among level-2 units. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -79,6 +82,7 @@ def render_inputs(design):
         min_value=1,
         value=30,
         step=1,
+        help="Average number of level-1 units per level-2 unit (e.g., students per classroom). More level-1 units generally increase power, especially when there is treatment-effect heterogeneity among level-1 units. Default: 30.",
     )
 
     # -----------------------------
@@ -90,14 +94,15 @@ def render_inputs(design):
         max_value=0.99,
         value=0.02,
         step=0.01,
+        help="Intraclass correlation coefficient at level 4: Proportion of variance in outcome explained by level-4 units (V4/(V1+V2+V3+V4). Higher values indicate more similarity within level-4 units, which can increase the required sample size. Default: 0.02.",
     )
-
     icc3 = st.number_input(
         "ICC (level 3)",
         min_value=0.0,
         max_value=0.99,
         value=0.05,
         step=0.01,
+        help="Intraclass correlation coefficient at level 3: Proportion of variance in outcome explained by level-3 units (V3/(V1+V2+V3+V4). Higher values indicate more similarity within level-3 units, which can increase the required sample size. Default: 0.05.",
     )
 
     icc2 = st.number_input(
@@ -106,6 +111,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation coefficient at level 2: Proportion of variance in outcome explained by level-2 units (V2/(V1+V2+V3+V4). Higher values indicate more similarity within level-2 units, which can increase the required sample size. Default: 0.10.",
     )
 
     # -----------------------------
@@ -117,6 +123,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of variance in outcome explained by level-1 covariates. More covariates generally increase power. Default: 0.0.",
     )
 
     r2_level2 = st.number_input(
@@ -125,6 +132,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of variance in outcome explained by level-2 covariates. More covariates generally increase power. Default: 0.0.",
+
     )
 
     r2_level3 = st.number_input(
@@ -133,6 +142,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of variance in outcome explained by level-3 covariates. More covariates generally increase power. Default: 0.0.",
     )
 
     r2_level4 = st.number_input(
@@ -141,6 +151,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of variance in outcome explained by level-4 covariates. More covariates generally increase power. Default: 0.0.",
+    )
+
+    g4 = st.number_input(
+        "Number of level-4 covariates (g4)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of level-4 covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
     )
 
     # -----------------------------
@@ -150,6 +170,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a continuous scale (e.g., test scores), while binary outcomes have two categories (e.g., success/failure). The choice of outcome type affects the power calculation and required sample size. Default: continuous.",
     )
 
     baseline_prob = None
@@ -162,6 +183,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher probability of the outcome occurring in the control group, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -169,6 +191,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome in raw units. Higher values indicate more variability in the outcome, which can increase the required sample size. Only needed for continuous outcomes. Default: 1.0.",
         )
 
     # -----------------------------
@@ -186,6 +209,7 @@ def render_inputs(design):
         "r2_level2": r2_level2,
         "r2_level3": r2_level3,
         "r2_level4": r2_level4,
+        "g4": g4,
         "p_treat": p_treat,
         "two_tailed": two_tailed,
         "alpha": alpha,
@@ -202,6 +226,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_cra4_4,
+        sensitivity_fields=["n_level4", "n_level3", "n_level2", "cluster_size", "icc2", "icc3", "icc4", "r2_level1", "r2_level2", "r2_level3", "r2_level4", "g4", "p_treat"],
     )
 
 render()

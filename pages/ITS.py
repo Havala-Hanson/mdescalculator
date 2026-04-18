@@ -86,7 +86,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
-            help="The baseline probability is the expected proportion of 'successes' (e.g., events, cases) in the outcome variable before the intervention. It should be between 0.01 and 0.99. Default: 0.50.",
+            help="The baseline probability is the expected proportion of 'successes' (e.g., events, cases) in the outcome variable before the intervention. It should be between 0.01 and 0.99. Higher values indicate a greater contribution of covariates to the outcome variability, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -94,7 +94,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
-            help="The standard deviation of the outcome variable in standardized units. Default: 1.0.",
+            help="The standard deviation of the outcome variable in standardized units. Higher values indicate more variability in the outcome, which can increase the required sample size. Default: 1.0.",
         )
 
     return {
@@ -115,6 +115,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_its,
+        sensitivity_fields=["n_timepoints_pre", "n_timepoints_post", "autocorrelation"],
     )
 
 render()

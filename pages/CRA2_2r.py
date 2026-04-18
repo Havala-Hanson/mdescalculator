@@ -58,6 +58,7 @@ def render_inputs(design):
         min_value=3,
         value=20,
         step=1,
+        help="Number of clusters in the study. More clusters generally increase power, but with diminishing returns. Default: 20.",
     )
 
     cluster_size = st.number_input(
@@ -65,6 +66,7 @@ def render_inputs(design):
         min_value=1,
         value=30,
         step=1,
+        help="Average number of individuals per cluster. More individuals per cluster generally increase power, especially when there is treatment-effect heterogeneity at the cluster level. Default: 30.",
     )
 
     # -----------------------------
@@ -76,7 +78,9 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation (ICC) measures the degree of similarity between individuals within the same cluster. Higher values indicate more similarity within clusters, which can increase the required sample size. Default: 0.10.",
     )
+
 
     r2_level1 = st.number_input(
         "R² (individual-level covariates)",
@@ -84,6 +88,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="R² for individual-level covariates (proportion of variance in outcome explained by individual-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
     )
 
     r2_level2 = st.number_input(
@@ -92,6 +97,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="R² for cluster-level covariates (proportion of variance in outcome explained by cluster-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
+    )
+
+    g2 = st.number_input(
+        "Number of cluster-level covariates for df adjustment (g2)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of cluster-level covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
     )
 
     # -----------------------------
@@ -101,6 +116,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a continuous scale (e.g., test scores), while binary outcomes have two categories (e.g., success/failure). The choice of outcome type affects the power calculation and required sample size. Default: continuous.",
     )
 
     baseline_prob = None
@@ -113,6 +129,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher probability of the outcome occurring in the control group, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -120,6 +137,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome variable in raw units. Higher values indicate more variability in the outcome, which can increase the required sample size. Default: 1.0.",
         )
 
     rel1 = st.number_input(
@@ -128,7 +146,7 @@ def render_inputs(design):
         max_value=1.00,
         value=1.00,
         step=0.01,
-        help="Reliability of the level-1 outcome measure. R default: 1.0 (perfect reliability).",
+        help="Reliability of the level-1 outcome measure. R default: 1.0 (perfect reliability). Lower reliability means more measurement error, which can increase the required sample size.",
     )
 
     # -----------------------------
@@ -140,6 +158,7 @@ def render_inputs(design):
         "icc": icc,
         "r2_level1": r2_level1,
         "r2_level2": r2_level2,
+        "g2": g2,
         "p_treat": p_treat,
         "rel1": rel1,
         "two_tailed": two_tailed,
@@ -156,6 +175,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_cra,
+        sensitivity_fields=["n_clusters", "cluster_size", "icc", "r2_level1", "r2_level2", "g2", "p_treat"],
     )
 
 render()

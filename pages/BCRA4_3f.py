@@ -49,6 +49,7 @@ def render_inputs(design):
         min_value=1,
         value=20,
         step=1,
+        help="Number of level-4 blocks (e.g., schools, clinics). More blocks generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_level3 = st.number_input(
@@ -56,6 +57,7 @@ def render_inputs(design):
         min_value=3,
         value=5,
         step=1,
+        help="Number of level-3 units (e.g., classrooms, departments) nested within each level-4 block. More level-3 units can increase power, especially when there is substantial level-3 variance. Default: 5.",
     )
 
     n_level2 = st.number_input(
@@ -63,6 +65,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
+        help="Number of level-2 units (e.g., students, patients) nested within each level-3 unit. More level-2 units can increase power, especially when there is substantial level-2 variance. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -70,6 +73,7 @@ def render_inputs(design):
         min_value=1,
         value=30,
         step=1,
+        help="Average number of level-1 units (e.g., test scores, measurements) nested within each level-2 unit. More level-1 units can increase power, especially when there is substantial level-1 variance. Default: 30.",
     )
 
     p_treat = st.number_input(
@@ -78,7 +82,7 @@ def render_inputs(design):
         max_value=0.95,
         value=0.5,
         step=0.05,
-        help="Proportion of level-3 units assigned to treatment within each block. Default: 0.5 (balanced).",
+        help="Proportion of level-3 units assigned to treatment within each block. Higher values indicate a more imbalanced design, which can increase the required sample size. Default: 0.5 (balanced).",
     )
 
     # -----------------------------
@@ -90,7 +94,9 @@ def render_inputs(design):
         max_value=0.99,
         value=0.02,
         step=0.01,
+        help="Intraclass correlation coefficient at level 4 (e.g., schools, clinics). Higher values indicate more similarity within blocks, which can increase the required sample size. Default: 0.02.",
     )
+
 
     icc3 = st.number_input(
         "ICC (level 3)",
@@ -98,6 +104,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
+        help="Intraclass correlation coefficient at level 3 (e.g., classrooms, departments). Higher values indicate more similarity within level-3 units, which can increase the required sample size. Default: 0.05.",
     )
 
     icc2 = st.number_input(
@@ -106,6 +113,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation coefficient at level 2 (e.g., students, patients). Higher values indicate more similarity within level-2 units, which can increase the required sample size. Default: 0.10.",
     )
 
     # -----------------------------
@@ -117,6 +125,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of level-1 variance explained by level-1 covariates. More explained variance can increase power. Default: 0.0.",
     )
 
     r2_level2 = st.number_input(
@@ -125,6 +134,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of level-2 variance explained by level-2 covariates. More explained variance can increase power. Default: 0.0.",
     )
 
     r2_level3 = st.number_input(
@@ -133,6 +143,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of level-3 variance explained by level-3 covariates. More explained variance can increase power. Default: 0.0.",
     )
 
     g3 = st.number_input(
@@ -140,7 +151,8 @@ def render_inputs(design):
         min_value=0,
         value=0,
         step=1,
-        help="Number of level-3 covariates used in the model. Reduces degrees of freedom: df = L·(K − 2) − g₃. Default: 0.",
+        help="Number of level-3 covariates used in the model. Reduces degrees of freedom: df = L·(K − 2) − g₃. More covariates can increase power but also reduce degrees of freedom. Default: 0.",
+
     )
 
     # -----------------------------
@@ -150,6 +162,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., pass/fail). This affects the calculation of the standard error and may require additional parameters (e.g., baseline probability for binary outcomes). Default: continuous.",
     )
 
     baseline_prob = None
@@ -162,6 +175,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher proportion of the control group having the outcome, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -169,6 +183,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome in raw units. Higher values indicate more variability in the outcome, which can increase the required sample size. Only needed for continuous outcomes. Default: 1.0.",
         )
 
     # -----------------------------
@@ -201,6 +216,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bcra4_3f,
+        sensitivity_fields=["n_level4", "n_level3", "n_level2", "cluster_size", "icc2", "icc3", "icc4", "r2_level1", "r2_level2", "r2_level3"],
     )
 
 render()

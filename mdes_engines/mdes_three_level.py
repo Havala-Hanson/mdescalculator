@@ -110,7 +110,8 @@ def compute_mdes_cra3_3(
         if not 0.0 < baseline_prob < 1.0:
             raise ValueError("baseline_prob must be in (0, 1).")
 
-    df = n_level3 - g3 - 1
+    # Match PowerUpR: df = K - g3 - 2 for CRA3_3r.
+    df = n_level3 - g3 - 2
     se = _se_cra3_3(
         icc3, icc2, r2_level1, r2_level2, r2_level3,
         p_treat, n_level3, n_level2, cluster_size,

@@ -2,12 +2,21 @@ import streamlit as st
 from datetime import datetime
 from services.interpretation import interpret_mdes
 from services.export import generate_docx
+from services.narrative import build_methodology
+from services.report_customization import render_customize_report
+from services.sensitivity import (
+    render_sensitivity_controls,
+    build_best_and_worst_inputs,
+    render_sensitivity_panel,
+    run_engine_safe,
+)
 
 
 def render_calculator_page(
     design,
     input_render_fn,
     engine_fn,
+    sensitivity_fields=None,
 ):
     st.subheader(design.title)
     st.write(design.description)
@@ -17,26 +26,59 @@ def render_calculator_page(
     # -----------------------------
     with st.form("calculator_form"):
         inputs = input_render_fn(design)
+
+        if sensitivity_fields:
+            sens_enabled, sens_ranges = render_sensitivity_controls(
+                inputs, sensitivity_fields
+            )
+        else:
+            sens_enabled, sens_ranges = False, {}
+
         submitted = st.form_submit_button("Compute MDES")
 
-    if not submitted:
+    # -----------------------------
+    # On submit: compute + cache in session state so later reruns
+    # (e.g., typing in the outside-form Customize report inputs) don't
+    # wipe the results.
+    # -----------------------------
+    cache_key = f"_calc_cache_{design.code}"
+
+    if submitted:
+        try:
+            result = engine_fn(**inputs)
+        except ValueError as e:
+            st.error(str(e))
+            st.session_state.pop(cache_key, None)
+            return
+
+        sensitivity_data = None
+        if sens_enabled and sens_ranges:
+            best_inputs, worst_inputs = build_best_and_worst_inputs(inputs, sens_ranges)
+            sensitivity_data = {
+                "best_inputs":  best_inputs,
+                "best_result":  run_engine_safe(engine_fn, best_inputs),
+                "worst_inputs": worst_inputs,
+                "worst_result": run_engine_safe(engine_fn, worst_inputs),
+            }
+
+        st.session_state[cache_key] = {
+            "result": result,
+            "inputs": inputs,
+            "sensitivity": sensitivity_data,
+        }
+
+    cached = st.session_state.get(cache_key)
+    if cached is None:
         return
 
-    # -----------------------------
-    # Compute
-    # -----------------------------
-    try:
-        result = engine_fn(**inputs)
-    except ValueError as e:
-        st.error(str(e))
-        return
+    result = cached["result"]
+    inputs = cached["inputs"]
+    sensitivity_data = cached["sensitivity"]
+    outcome_type = inputs.get("outcome_type")
 
-    # -----------------------------
-    # Interpretation
-    # -----------------------------
     interp = interpret_mdes(
         mdes=result.mdes,
-        outcome_type=inputs["outcome_type"],
+        outcome_type=outcome_type,
         baseline_prob=inputs.get("baseline_prob"),
         alpha=inputs["alpha"],
         power=inputs["power"],
@@ -46,8 +88,6 @@ def render_calculator_page(
     # Results
     # -----------------------------
     st.subheader("Results")
-
-    outcome_type = inputs.get("outcome_type")
 
     col1, col2 = st.columns(2)
     with col1:
@@ -90,18 +130,33 @@ def render_calculator_page(
     st.write(interp["narrative"])
 
     # -----------------------------
+    # Sensitivity analysis (render from cache)
+    # -----------------------------
+    if sensitivity_data:
+        render_sensitivity_panel(
+            best_result=sensitivity_data["best_result"],
+            main_result=result,
+            worst_result=sensitivity_data["worst_result"],
+            outcome_type=outcome_type,
+        )
+
+    # -----------------------------
+    # Customize report (label inputs for the .docx narrative)
+    # -----------------------------
+    labels_raw = render_customize_report(design)
+
+    # -----------------------------
     # Export
     # -----------------------------
     st.subheader("Download report")
 
-    calc_narrative = (
-        f"The MDES was computed using the {design.title} design, "
-        f"which applies a two-tailed test with "
-        f"\u03b1={inputs.get('alpha', 0.05)} and "
-        f"power={inputs.get('power', 0.80)}. Variance components and covariate "
-        f"adjustments were incorporated according to the design\u2019s statistical "
-        f"model. For continuous outcomes, effect-size interpretation follows "
-        f"Kraft (2020)."
+    methodology_blocks = build_methodology(
+        design=design,
+        inputs=inputs,
+        result=result,
+        outcome_type=outcome_type,
+        labels_raw=labels_raw,
+        sensitivity=sensitivity_data,
     )
 
     report_bytes = generate_docx(
@@ -109,7 +164,8 @@ def render_calculator_page(
         inputs=inputs,
         results=result,
         narrative=interp["narrative"],
-        calc_narrative=calc_narrative,
+        methodology_blocks=methodology_blocks,
+        sensitivity=sensitivity_data,
     )
 
     st.download_button(
