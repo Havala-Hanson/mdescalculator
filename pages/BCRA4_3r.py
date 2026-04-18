@@ -47,6 +47,7 @@ def render_inputs(design):
         min_value=1,
         value=20,
         step=1,
+        help="Number of level-4 blocks (e.g., schools, clinics). More blocks generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_level3 = st.number_input(
@@ -54,6 +55,7 @@ def render_inputs(design):
         min_value=3,
         value=5,
         step=1,
+        help="Number of level-3 units (e.g., classrooms, departments) nested within each level-4 block. More level-3 units can increase power, especially when there is substantial level-3 variance. Default: 5.",
     )
 
     n_level2 = st.number_input(
@@ -61,6 +63,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
+       help="Number of level-2 units (e.g., students, patients) nested within each level-3 unit. More level-2 units can increase power, especially when there is substantial level-2 variance. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -68,6 +71,7 @@ def render_inputs(design):
         min_value=1,
         value=30,
         step=1,
+        help="Average number of level-1 units (e.g., test scores, measurements) nested within each level-2 unit. More level-1 units can increase power, especially when there is substantial level-1 variance. Default: 30.",
     )
 
     p_treat = st.number_input(
@@ -76,7 +80,7 @@ def render_inputs(design):
         max_value=0.95,
         value=0.5,
         step=0.05,
-        help="Proportion of level-3 units assigned to treatment within each block. Default: 0.5 (balanced).",
+        help="Proportion of level-3 units assigned to treatment within each block. Higher values indicate a more imbalanced design, which can increase the required sample size. Default: 0.5 (balanced).",
     )
 
     # -----------------------------
@@ -88,7 +92,9 @@ def render_inputs(design):
         max_value=0.99,
         value=0.02,
         step=0.01,
-    )
+        help="Intraclass correlation at level 4 (e.g., districts). Represents the proportion of outcome variance between level-4 units. This variance is distinct from treatment-effect heterogeneity (ω₄). Higher ICC4 increases the between-block outcome variance component. Default: 0.05."
+)
+
 
     icc3 = st.number_input(
         "ICC (level 3)",
@@ -96,7 +102,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-    )
+        help="Intraclass correlation at level 3 (e.g., schools). Represents the proportion of outcome variance between level-3 units. Level-3 effects are fixed in this design, so ICC3 does not contribute directly to the MDES but is used for outcome variance scaling. Default: 0.05."
+)
 
     icc2 = st.number_input(
         "ICC (level 2)",
@@ -104,15 +111,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
-    )
+        help="Intraclass correlation at level 2 (e.g., classrooms). Represents the proportion of outcome variance between level-2 units. Higher ICC2 increases the between-classroom variance component and typically increases the MDES. Default: 0.10."
+)
 
     omega4 = st.number_input(
         "Treatment-effect heterogeneity across blocks (ω₄)",
         min_value=0.0,
         value=1.0,
         step=0.1,
-        help="Ratio of treatment-effect variance to outcome variance at the block level. ω₄=0 means treatment effects are constant across blocks; ω₄=1 means they vary as much as the level-4 outcome variance. Default: 1.0.",
-    )
+        help="Treatment-effect heterogeneity across level-4 units (e.g., districts). ω₄ represents the ratio of treatment-effect variance to outcome variance at level 4. ω₄ = 0 means treatment effects are constant across districts; higher values indicate more variation in treatment effects. This term increases the MDES and is not reduced by outcome-level R² terms. Default: 1.0."
+)
 
     # -----------------------------
     # Covariates
@@ -123,7 +131,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-1 (individual-level) outcome variance explained by covariates. Higher values reduce residual variance and lower the MDES. Default: 0.0."
+)
 
     r2_level2 = st.number_input(
         "R² (level-2 covariates)",
@@ -131,7 +140,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-2 (classroom-level) outcome variance explained by covariates. Higher values reduce between-classroom variance and lower the MDES. Default: 0.0."
+)
 
     r2_level3 = st.number_input(
         "R² (level-3 covariates)",
@@ -139,7 +149,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-3 (school-level) outcome variance explained by covariates. Level-3 effects are fixed in this design, so this reduces outcome variance used for scaling but does not affect the MDES directly. Default: 0.0."
+)
 
     r2_treat4 = st.number_input(
         "R² (block covariates, treatment-effect variance)",
@@ -147,16 +158,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="Proportion of block-level treatment-effect variance explained by block-level covariates. Only meaningful when ω₄ > 0 (i.e., treatment effects vary across blocks). Default: 0.0.",
-    )
+        help="Proportion of level-4 treatment-effect heterogeneity (ω₄) explained by moderators. Higher values reduce variation in treatment effects across level-4 units, lowering the MDES. Default: 0.0."
+)
 
     g4 = st.number_input(
         "Number of level-4 (block) covariates (g₄)",
         min_value=0,
         value=0,
         step=1,
-        help="Number of block-level covariates used in the model. Reduces degrees of freedom: df = L − g₄ − 1. Default: 0.",
-    )
+        help="Number of level-4 covariates included in the model. These reduce degrees of freedom at the highest level: df = L − g₄ − 1. More covariates can reduce variance but also reduce df, which can increase the MDES. Default: 0."
+)
 
     # -----------------------------
     # Outcome type
@@ -165,6 +176,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., pass/fail). This choice affects the calculation of the standard deviation and the MDES. Default: Continuous.",
     )
 
     baseline_prob = None
@@ -177,14 +189,16 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
-        )
+            help="Baseline probability of the outcome in the control group. Determines the variance of a binary outcome: p(1−p). Values near 0 or 1 reduce variance and can increase the MDES. Default: 0.50."
+            )
     else:
         outcome_sd = st.number_input(
             "Outcome SD (raw units)",
             min_value=0.01,
             value=1.0,
             step=0.1,
-        )
+            help="Standard deviation of the continuous outcome. Larger SD values indicate more variability and increase the MDES. Default: 1.0."
+            )
 
     # -----------------------------
     # Return engine inputs
@@ -218,6 +232,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bcra4_3r,
+        sensitivity_fields=["n_level4", "n_level3", "n_level2", "cluster_size", "icc2", "icc3", "icc4", "omega4", "r2_level1", "r2_level2", "r2_level3", "r2_treat4"],
     )
 
 render()

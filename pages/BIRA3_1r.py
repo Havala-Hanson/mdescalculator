@@ -37,7 +37,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
-        help="Number of level-3 blocks (e.g., districts, schools). Default: 20.",
+        help="Number of level-3 blocks (e.g., districts, schools). More blocks generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_clusters_per_block = st.number_input(
@@ -45,7 +45,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
-        help="Number of clusters (e.g., schools, clinics) per block. Default: 5.",
+        help="Number of clusters (e.g., schools, clinics) per block. More clusters generally increase power, but with diminishing returns. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -53,7 +53,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
-        help="Average number of individuals per cluster. Default: 20.",
+        help="Average number of individuals per cluster. More individuals per cluster generally increase power, but with diminishing returns. Default: 20.",
     )
 
     # ------------------------------------------------------------
@@ -65,7 +65,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-        help="Intraclass correlation coefficient at block level: Proportion of variance in outcome explained by blocks (V3/(V1+V2+V3)). Default: 0.05.",
+        help="Intraclass correlation coefficient at block level: Proportion of variance in outcome explained by blocks (V3/(V1+V2+V3)). Higher values indicate more similarity within blocks, which can decrease power. Default: 0.05.",
     )
 
     icc2 = st.number_input(
@@ -74,7 +74,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
-        help="Intraclass correlation coefficient at cluster level: Proportion of variance in outcome explained by clusters (V2/(V1+V2+V3)). Default: 0.10.",
+        help="Intraclass correlation coefficient at cluster level: Proportion of variance in outcome explained by clusters (V2/(V1+V2+V3)). Higher values indicate more similarity within clusters, which can decrease power. Default: 0.10.",
     )
 
     # ------------------------------------------------------------
@@ -86,7 +86,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
-        help="Proportion of block-level variance that is explained by treatment assignment. Default: 1.0 (treatment explains all block-level variance).",
+        help="Proportion of block-level variance that is explained by treatment assignment. Higher values indicate a larger treatment effect at the block level, which can increase power. Default: 1.0 (treatment explains all block-level variance).",
     )
 
     omega2 = st.number_input(
@@ -95,19 +95,26 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
-        help="Proportion of cluster-level variance that is explained by treatment assignment. Default: 1.0 (treatment explains all cluster-level variance).",
+        help="Proportion of cluster-level variance that is explained by treatment assignment. Higher values indicate a larger treatment effect at the cluster level, which can increase power. Default: 1.0 (treatment explains all cluster-level variance).",
     )
 
     # ------------------------------------------------------------
     # Covariate R²
     # ------------------------------------------------------------
     r2_level1 = st.number_input("R² level 1 (r₂₁)", 0.0, 0.99, 0.0, 0.05,
-                                help="R² for level-1 covariates (proportion of variance in outcome explained by level-1 covariates). Default: 0.0.")
+                                help="R² for level-1 covariates (proportion of variance in outcome explained by level-1 covariates). More explained variance can increase power. Default: 0.0.")
     r2_level2 = st.number_input("R² level 2 (r₂t₂)", 0.0, 0.99, 0.0, 0.05,
-                                help="R² for level-2 covariates (proportion of variance in outcome explained by level-2 covariates). Default: 0.0.")
+                                help="R² for level-2 covariates (proportion of variance in outcome explained by level-2 covariates). More explained variance can increase power. Default: 0.0.")
     r2_level3 = st.number_input("R² level 3 (r₂t₃)", 0.0, 0.99, 0.0, 0.05,
-                                help="R² for level-3 covariates (proportion of variance in outcome explained by level-3 covariates). Default: 0.0.")
-
+                                help="R² for level-3 covariates (proportion of variance in outcome explained by level-3 covariates). More explained variance can increase power. Default: 0.0.")
+    g3 = st.number_input(
+        "Number of level-3 covariates (g3)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of level-3 covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
+    )
     # ------------------------------------------------------------
     # Outcome type
     # ------------------------------------------------------------
@@ -117,10 +124,10 @@ def render_inputs(design):
     outcome_sd = None
     if outcome_type == "binary":
         baseline_prob = st.number_input("Baseline probability", 0.01, 0.99, 0.50, 0.01,
-                                        help="Baseline probability of the outcome in the control group (for binary outcomes). Default: 0.50.")
+                                        help="Baseline probability of the outcome in the control group (for binary outcomes). More extreme probabilities can increase the required sample size. Default: 0.50.")
     else:
         outcome_sd = st.number_input("Outcome SD (standardized)", 0.01, value=1.0, step=0.1,
-                                     help="Standard deviation of the outcome variable in standardized units. Default: 1.0 (standardized outcome).")
+                                     help="Standard deviation of the outcome variable in standardized units. Higher values indicate more variability in the outcome, which can increase the required sample size. Default: 1.0 (standardized outcome).")
 
     return {
         "n_blocks": n_blocks,
@@ -148,6 +155,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira3_1r,
+        sensitivity_fields=["n_blocks", "n_clusters_per_block", "cluster_size", "icc2", "icc3", "omega2", "omega3", "r2_level1", "r2_level2", "r2_level3"],
     )
 
 render()

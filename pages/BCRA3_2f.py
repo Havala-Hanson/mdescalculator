@@ -57,23 +57,26 @@ def render_inputs(design, outcome_type):
     n_level3 = st.number_input(
         "Number of level-3 blocks (K)",
         min_value=1,
-        value=20,
+        value=50,
         step=1,
-    )
+        help="Number of level-3 blocks (e.g., schools). Blocks are fixed effects in this design, so increasing K increases the number of randomized clusters (K × J), which improves power. Default: 50." 
+        )
 
     n_level2 = st.number_input(
         "Number of level-2 units per block (J)",
         min_value=3,
         value=5,
         step=1,
-    )
+        help="Number of level-2 units (e.g., classrooms) within each block. Increasing J increases the number of randomized units (K × J), which generally improves power, with diminishing returns when ICC2 is high. Default: 5."
+        )
 
     cluster_size = st.number_input(
         "Average number of level-1 units per level-2 unit (n)",
         min_value=1,
         value=30,
         step=1,
-    )
+        help="Average number of level-1 units (e.g., individuals) per level-2 unit. Larger cluster sizes reduce the within-cluster variance component, improving power, though gains diminish when ICC2 is high. Default: 30."
+        )
 
     # -----------------------------
     # ICCs
@@ -85,6 +88,7 @@ def render_inputs(design, outcome_type):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation at level 2 (e.g., classrooms). Represents the proportion of total variance that is between level-2 units. Higher ICCs typically require larger sample sizes to achieve the same power. Default: 0.10.",
     )
 
     # -----------------------------
@@ -96,7 +100,8 @@ def render_inputs(design, outcome_type):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Average number of level-1 units (e.g., individuals) per level-2 unit. Larger cluster sizes reduce the within-cluster variance component, improving power, though gains diminish when ICC2 is high. Default: 30."
+        )
 
     r2_level2 = st.number_input(
         "R² (level-2 covariates)",
@@ -104,7 +109,8 @@ def render_inputs(design, outcome_type):
         max_value=0.99,
         value=0.0,
         step=0.05,
-    )
+        help="Proportion of level-2 (cluster-level) variance explained by covariates. Higher values reduce between-cluster variance and lower the MDES. Default: 0.0."
+        )
 
     
     # -----------------------------
@@ -164,7 +170,8 @@ def render():
         options=["continuous", "binary"],
         index=0,
         horizontal=True,
-        key="outcome_type_radio"
+        key="outcome_type_radio",
+        help="Select the type of outcome variable. This will determine whether you need to input a baseline probability (for binary outcomes) or an outcome standard deviation (for continuous outcomes). Default: Continuous.",
     )
 
     st. session_state["outcome_type"] = outcome_type
@@ -177,6 +184,7 @@ def render():
         design=design,
         input_render_fn=input_render_fn,
         engine_fn=compute_mdes_bcra3_2f,
+        sensitivity_fields=["n_level3", "n_level2", "cluster_size", "icc2", "r2_level1", "r2_level2"],
     )
 
 render()

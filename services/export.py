@@ -82,6 +82,16 @@ def _add_section_heading(doc, text):
     return p
 
 
+def _add_subsection_heading(doc, text):
+    """Bold 12pt Calibri in #1F3864, tighter spacing — for blocks within a section."""
+    p = doc.add_paragraph()
+    p.paragraph_format.space_before = Pt(8)
+    p.paragraph_format.space_after  = Pt(2)
+    run = p.add_run(text)
+    _style_run(run, 12, bold=True, color=_NAVY)
+    return p
+
+
 def _add_body_para(doc, text):
     """11pt Calibri, justified, 1.15 line spacing, 6pt after."""
     p   = doc.add_paragraph(text)
@@ -168,6 +178,49 @@ def _make_two_col_table(doc, rows_data,
     return table
 
 
+def _sensitivity_row(label, result, outcome_type):
+    """Format one scenario row for the sensitivity table. `result` may be an
+    MDESResult or a string (error message from a low-case that failed
+    engine validation)."""
+    if isinstance(result, str):
+        return (label, result, '—', '—')
+    if outcome_type == 'binary' and getattr(result, 'mdes_pct_points', None) is not None:
+        mdes_str = f"{result.mdes_pct_points:.2f} pp"
+    else:
+        mdes_str = f"{result.mdes:.4f}"
+    return (label, mdes_str, f"{result.se:.4f}", f"{result.df}")
+
+
+def _add_sensitivity_table(doc, main_result, sensitivity, outcome_type):
+    """Four-column table: Scenario / MDES / SE / df."""
+    rows = [
+        _sensitivity_row('Best case (smallest MDES)', sensitivity['best_result'], outcome_type),
+        _sensitivity_row('Main', main_result, outcome_type),
+        _sensitivity_row('Worst case (largest MDES)', sensitivity['worst_result'], outcome_type),
+    ]
+
+    table = doc.add_table(rows=1, cols=4)
+    table.style = 'Table Grid'
+
+    headers = ('Scenario', 'MDES', 'Standard error', 'df')
+    for cell, label in zip(table.rows[0].cells, headers):
+        cell.text = ''
+        run = cell.paragraphs[0].add_run(label)
+        _style_run(run, 10, bold=True, color=_WHITE)
+        _set_cell_bg(cell, _BLUE)
+
+    for scenario, mdes_str, se_str, df_str in rows:
+        row = table.add_row().cells
+        for col_idx, value in enumerate((scenario, mdes_str, se_str, df_str)):
+            run = row[col_idx].paragraphs[0].add_run(str(value))
+            _style_run(run, 10, bold=(col_idx == 0))
+            if col_idx > 0:
+                row[col_idx].paragraphs[0].alignment = WD_ALIGN_PARAGRAPH.RIGHT
+
+    _remove_outer_borders(table)
+    return table
+
+
 def _add_page_number(paragraph):
     """Append a right-aligned 'Page X of Y' field to a paragraph."""
     paragraph.alignment = WD_ALIGN_PARAGRAPH.RIGHT
@@ -214,21 +267,30 @@ def _add_footer_top_border(footer):
 # ------------------------------------------------------------
 
 def generate_docx(title: str, inputs: dict, results, narrative: str,
-                  calc_narrative: str, metadata: Optional[dict] = None,
+                  methodology_blocks: Optional[list] = None,
+                  calc_narrative: Optional[str] = None,
+                  sensitivity: Optional[dict] = None,
+                  metadata: Optional[dict] = None,
                   citations: Optional[list] = None) -> io.BytesIO:
     """
     Build and return a fully-styled MDES .docx report as an in-memory buffer.
 
     Parameters
     ----------
-    title          : descriptive report title (e.g. design name)
-    inputs         : ordered dict of user-selected calculation inputs
-    results        : result object with attributes mdes, se, df, design_effect,
-                     effective_n, total_n; and optionally mdes_pct_points
-    narrative      : pre-built interpretive narrative string
-    calc_narrative : pre-built methodology / calculation narrative string
-    metadata       : reserved for future use
-    citations      : optional list of APA citation strings for the footer
+    title              : descriptive report title (e.g. design name)
+    inputs             : ordered dict of user-selected calculation inputs
+    results            : result object with attributes mdes, se, df, design_effect,
+                         effective_n, total_n; and optionally mdes_pct_points
+    narrative          : pre-built interpretive narrative string
+    methodology_blocks : list of (subheading, body) tuples — renders as H3
+                         subheadings inside Methodology & Calculations.
+                         Takes precedence over calc_narrative when both given.
+    calc_narrative     : legacy single-paragraph methodology string (fallback).
+    sensitivity        : optional dict with keys 'low_inputs', 'low_result',
+                         'high_inputs', 'high_result'. When present, a
+                         sensitivity table is added after the methodology.
+    metadata           : reserved for future use
+    citations          : optional list of APA citation strings for the footer
     """
     doc = Document()
 
@@ -318,7 +380,24 @@ def generate_docx(title: str, inputs: dict, results, narrative: str,
 
     # ── Methodology & Calculations ───────────────────────────────────────────
     _add_section_heading(doc, 'Methodology & Calculations')
-    _add_body_para(doc, calc_narrative if calc_narrative else 'Not provided.')
+    if methodology_blocks:
+        for subheading, body in methodology_blocks:
+            _add_subsection_heading(doc, subheading)
+            _add_body_para(doc, body if body else 'Not provided.')
+    else:
+        _add_body_para(doc, calc_narrative if calc_narrative else 'Not provided.')
+
+    # ── Sensitivity analysis table ───────────────────────────────────────────
+    if sensitivity:
+        _add_section_heading(doc, 'Sensitivity Analysis Results')
+        _add_body_para(
+            doc,
+            'The table below reports the MDES, standard error, and degrees of '
+            'freedom under the small-sample (all mins), main, and large-sample '
+            '(all maxs) scenarios.'
+        )
+        _add_sensitivity_table(doc, results, sensitivity, outcome_type)
+        doc.add_paragraph()
 
     # ── Footer (all pages) ───────────────────────────────────────────────────
     default_citations = [

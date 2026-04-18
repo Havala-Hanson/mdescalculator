@@ -50,6 +50,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
+        help="Number of blocks (clusters) in the design. More blocks generally increase power, but with diminishing returns. Default: 20.",
     )
 
     n_individuals = st.number_input(
@@ -57,6 +58,7 @@ def render_inputs(design):
         min_value=4,
         value=200,
         step=10,
+        help="Total number of individuals in the study (N). More individuals generally increase power. Default: 200.",
     )
 
     # -----------------------------
@@ -68,6 +70,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.10,
         step=0.01,
+        help="Intraclass correlation coefficient (ICC) at the block level. Higher ICC indicates more similarity within blocks, which can decrease power. Default: 0.10.",
     )
 
     omega2 = st.number_input(
@@ -76,6 +79,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
+        help="Proportion of block-level variance that is in the treatment contrast. Higher values indicate more treatment effect heterogeneity at the block level, which can increase power. Default: 1.0.",
     )
 
     # -----------------------------
@@ -87,6 +91,8 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of individual-level variance explained by individual-level covariates. More explained variance can increase power. Default: 0.0.",
+
     )
 
     r2_level2 = st.number_input(
@@ -95,6 +101,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
+        help="Proportion of block-level variance explained by block-level covariates. More explained variance can increase power. Default: 0.0.",
     )
 
     # -----------------------------
@@ -106,6 +113,7 @@ def render_inputs(design):
         max_value=0.95,
         value=0.50,
         step=0.05,
+        help="Proportion of individuals assigned to the treatment group. Higher values indicate a larger treatment effect, which can increase the required sample size. Default: 0.50.",
     )
 
     rel1 = st.number_input(
@@ -114,6 +122,7 @@ def render_inputs(design):
         max_value=1.00,
         value=1.00,
         step=0.05,
+        help="Reliability of the individual-level outcome measure. Higher reliability means less measurement error, which can increase power. Default: 1.00 (perfect reliability).",
     )
 
     # -----------------------------
@@ -123,6 +132,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., pass/fail). This affects the calculation of the standard error and may require additional parameters (e.g., baseline probability for binary outcomes). Default: continuous.",
     )
 
     baseline_prob = None
@@ -135,6 +145,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher proportion of the control group having the outcome, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -142,6 +153,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome in raw units. Higher values indicate more variability in the outcome, which can increase the required sample size. Only needed for continuous outcomes. Default: 1.0.",
         )
 
     # -----------------------------
@@ -170,6 +182,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira2_1r,
+        sensitivity_fields=["n_individuals", "n_blocks", "icc2", "omega2", "r2_level1", "r2_level2"],
     )
 
 render()

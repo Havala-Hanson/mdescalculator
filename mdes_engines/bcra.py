@@ -363,7 +363,10 @@ def compute_mdes_bcra3_2r(
     mdes = M * se
 
     # --- Percentage-point MDES (binary) -------------------------------
-    mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
+    if outcome_type == "binary":
+        mdes_pct_points = mdes * sd * 100   # sd = sqrt(p0*(1-p0))
+    else:
+        mdes_pct_points = None
 
     # --- Design effect & effective N ----------------------------------
     total_n = K * J * n

@@ -48,7 +48,7 @@ def render_inputs(design):
         min_value=2,
         value=5,
         step=1,
-        help="Number of level-4 blocks (e.g., districts, regions). Default: 5.",
+        help="Number of level-4 blocks (e.g., districts, regions). More blocks generally increase power, but with diminishing returns. Default: 5.",
     )
 
     n_sites_per_block = st.number_input(
@@ -56,7 +56,7 @@ def render_inputs(design):
         min_value=1,
         value=4,
         step=1,
-        help="Number of level-3 sites (e.g., schools, clinics) per block. Default: 4.",
+        help="Number of level-3 sites (e.g., schools, clinics) per block. More sites can increase power, especially when there is treatment-effect heterogeneity between blocks. Default: 4.",
     )
 
     n_clusters_per_site = st.number_input(
@@ -64,7 +64,7 @@ def render_inputs(design):
         min_value=1,
         value=5,
         step=1,
-        help="Number of level-2 clusters (e.g., classrooms, patient groups) per site. Default: 5.",
+        help="Number of level-2 clusters (e.g., classrooms, patient groups) per site. More clusters can increase power, especially when there is treatment-effect heterogeneity between sites. Default: 5.",
     )
 
     cluster_size = st.number_input(
@@ -72,7 +72,7 @@ def render_inputs(design):
         min_value=2,
         value=20,
         step=1,
-        help="Average number of individuals per cluster. Default: 20.",
+        help="Average number of individuals per cluster. More individuals per cluster can increase power, especially when there is treatment-effect heterogeneity between clusters. Default: 20.",
     )
 
     prop_treated = st.number_input(
@@ -81,7 +81,7 @@ def render_inputs(design):
         max_value=0.95,
         value=0.50,
         step=0.05,
-        help="Proportion of clusters assigned to treatment. Default: 0.50.",
+        help="Proportion of clusters assigned to treatment. Higher values indicate a higher proportion of clusters assigned to treatment, which can increase the required sample size. Default: 0.50.",
     )
 
     # -----------------------------
@@ -93,7 +93,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-        help="Intraclass correlation coefficient at level 2 (clusters): Proportion of variance in outcome explained by clusters (V2/(V1+V2+V3+V4)). Default: 0.05.",
+        help="Intraclass correlation coefficient at level 2 (clusters): Proportion of variance in outcome explained by clusters (V2/(V1+V2+V3+V4)). Higher values indicate more similarity within clusters, which can increase the required sample size. Default: 0.05.",
     )
 
     icc3 = st.number_input(
@@ -102,7 +102,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-        help="Intraclass correlation coefficient at level 3 (sites): Proportion of variance in outcome explained by sites (V3/(V1+V2+V3+V4)). Default: 0.05.",
+        help="Intraclass correlation coefficient at level 3 (sites): Proportion of variance in outcome explained by sites (V3/(V1+V2+V3+V4)). Higher values indicate more similarity within sites, which can increase the required sample size. Default: 0.05.",
     )
 
     icc4 = st.number_input(
@@ -111,7 +111,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.05,
         step=0.01,
-        help="Intraclass correlation coefficient at level 4 (blocks): Proportion of variance in outcome explained by blocks (V4/(V1+V2+V3+V4)). Default: 0.05.",
+        help="Intraclass correlation coefficient at level 4 (blocks): Proportion of variance in outcome explained by blocks (V4/(V1+V2+V3+V4)). Higher values indicate more similarity within blocks, which can increase the required sample size. Default: 0.05.",
     )
 
     omega2 = st.number_input(
@@ -120,7 +120,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
-        help="Proportion of level-2 variance that is explained by treatment assignment. Default: 1.0 (treatment explains all cluster-level variance).",
+        help="Proportion of level-2 variance that is explained by treatment assignment. Higher values indicate a stronger treatment effect at the cluster level. Default: 1.0 (treatment explains all cluster-level variance).",
     )
 
     omega3 = st.number_input(
@@ -129,7 +129,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
-        help="Proportion of level-3 variance that is explained by treatment assignment. Default: 1.0 (treatment explains all site-level variance).",
+        help="Proportion of level-3 variance that is explained by treatment assignment. Higher values indicate a stronger treatment effect at the site level. Default: 1.0 (treatment explains all site-level variance).",
     )
 
     omega4 = st.number_input(
@@ -138,7 +138,7 @@ def render_inputs(design):
         max_value=1.0,
         value=1.0,
         step=0.05,
-        help="Proportion of level-4 variance that is explained by treatment assignment. Default: 1.0 (treatment explains all block-level variance).",
+        help="Proportion of level-4 variance that is explained by treatment assignment. Higher values indicate a stronger treatment effect at the block level. Default: 1.0 (treatment explains all block-level variance).",
     )
 
     # -----------------------------
@@ -150,7 +150,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="R² for individual-level covariates (proportion of variance in outcome explained by individual-level covariates). Default: 0.0."
+        help="R² for individual-level covariates (proportion of variance in outcome explained by individual-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
     )
 
     r2_level2 = st.number_input(
@@ -159,7 +159,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="R² for cluster-level covariates (proportion of variance in outcome explained by cluster-level covariates). Default: 0.0."
+        help="R² for cluster-level covariates (proportion of variance in outcome explained by cluster-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
     )
 
     r2_level3 = st.number_input(
@@ -168,7 +168,7 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="R² for site-level covariates (proportion of variance in outcome explained by site-level covariates). Default: 0.0."
+        help="R² for site-level covariates (proportion of variance in outcome explained by site-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
     )
 
     r2_level4 = st.number_input(
@@ -177,7 +177,16 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="R² for block-level covariates (proportion of variance in outcome explained by block-level covariates). Default: 0.0."
+        help="R² for block-level covariates (proportion of variance in outcome explained by block-level covariates). Higher values indicate more variance explained by these covariates, which can increase power. Default: 0.0."
+    )
+
+    g4 = st.number_input(
+        "Number of level-4 covariates (g4)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of level-4 covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
     )
 
     # -----------------------------
@@ -187,6 +196,7 @@ def render_inputs(design):
         "Outcome type",
         ["continuous", "binary"],
         index=0,
+        help="Type of outcome variable. Continuous outcomes are measured on a continuous scale (e.g., test scores), while binary outcomes have two categories (e.g., success/failure). The choice of outcome type affects the power calculation and required sample size. Default: continuous.",
     )
 
     baseline_prob = None
@@ -199,7 +209,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
-            help="Baseline probability of the outcome in the control group. Default: 0.50.",
+            help="Baseline probability of the outcome in the control group. Higher values indicate a higher probability of the outcome occurring in the control group, which can increase the required sample size. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -207,7 +217,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
-            help="Standard deviation of the outcome variable in standardized units. Default: 1.0.",
+            help="Standard deviation of the outcome variable in standardized units. Higher values indicate more variability in the outcome, which can increase the required sample size. Default: 1.0.",
         )
 
     # -----------------------------
@@ -243,6 +253,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_bira4_1r,
+        sensitivity_fields=["n_blocks", "n_sites_per_block", "n_clusters_per_site", "cluster_size", "icc2", "icc3", "icc4", "omega2", "omega3", "omega4", "r2_level1", "r2_level2", "r2_level3", "r2_level4"],
     )
 
 render()

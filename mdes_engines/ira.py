@@ -76,7 +76,10 @@ def compute_mdes_ira(
     mdes_standardized = mdes * sd if outcome_type == "continuous" else None
 
     # --- Percentage-point MDES (binary) -------------------------------
-    mdes_pct_points = mdes * 100 if outcome_type == "binary" else None
+    if outcome_type == "binary":
+        mdes_pct_points = mdes * math.sqrt(bp * (1 - bp)) * 100
+    else:
+        mdes_pct_points = None
 
     # --- Design effect & effective N ----------------------------------
     design_effect = 1.0

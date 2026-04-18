@@ -41,7 +41,7 @@ def render_inputs(design):
         min_value=4,
         value=200,
         step=10,
-        help="Total number of individuals in the study. Must be at least 4. Default: 200.",
+        help="Total number of individuals in the study. Must be at least 4. More individuals generally increase power. Default: 200.",
     )
     
     r2_level1 = st.number_input(
@@ -50,14 +50,22 @@ def render_inputs(design):
         max_value=0.99,
         value=0.0,
         step=0.05,
-        help="Proportion of variance in the outcome explained by covariates. Default: 0.0 (no covariates).",
-    )
+        help="Proportion of variance in the outcome explained by covariates. Higher values reduce residual variance and therefore reduce the MDES. Default: 0.0 (no covariates).")
 
+    g1 = st.number_input(
+        "Number of covariates for df adjustment (g1)",
+        min_value=0,
+        max_value=100,
+        value=0,
+        step=1,
+        help="Number of level-1 covariates included in the model for degrees‑of‑freedom adjustment. More covariates reduce the available degrees of freedom, which can slightly increase the MDES. Default: 0.",
+    )
+    
     outcome_type = st.selectbox(
         "Outcome type",
         ["continuous", "binary"],
         index=0,
-        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores), while binary outcomes have two categories (e.g., success/failure). Default: Continuous.",
+        help="Type of outcome variable. Continuous outcomes are measured on a numeric scale (e.g., test scores). Binary outcomes have two categories (e.g., success/failure). Default: continuous.",
     )
 
     baseline_prob = None
@@ -70,6 +78,7 @@ def render_inputs(design):
             max_value=0.99,
             value=0.50,
             step=0.01,
+            help="“Baseline probability of the outcome in the control group. Determines the variance of a binary outcome, which affects the MDES in percentage‑point units. Variance is highest at 0.50. Default: 0.50.",
         )
     else:
         outcome_sd = st.number_input(
@@ -77,6 +86,7 @@ def render_inputs(design):
             min_value=0.01,
             value=1.0,
             step=0.1,
+            help="Standard deviation of the outcome in raw units. Larger values increase the MDES when expressed in raw units. Only needed for continuous outcomes. Default: 1.0.",
         )
 
     p = st.number_input(
@@ -85,24 +95,15 @@ def render_inputs(design):
         max_value=0.99,
         value=0.50,
         step=0.01,
-        help="Proportion of individuals assigned to treatment. Default: 0.50.",
-    )
-
-    g1 = st.number_input(
-        "Number of covariates (g1)",
-        min_value=0,
-        max_value=100,
-        value=0,
-        step=1,
-        help="Number of covariates for degrees of freedom adjustment. Default: 0.",
+        help="Proportion of individuals assigned to treatment. MDES is minimized when p = 0.50 and increases as the allocation becomes more unbalanced. Default: 0.50.",
     )
 
     return {
         "n_individuals": n_individuals,
         "two_tailed": two_tailed,
         "r2_level1": r2_level1,
-        "p": p,
         "g1": g1,
+        "p": p,
         "outcome_type": outcome_type,
         "baseline_prob": baseline_prob,
         "outcome_sd": outcome_sd,
@@ -116,6 +117,7 @@ def render():
         design=design,
         input_render_fn=render_inputs,
         engine_fn=compute_mdes_ira,
+        sensitivity_fields=["n_individuals", "r2_level1", "g1", "p"],
     )
 
 render()
